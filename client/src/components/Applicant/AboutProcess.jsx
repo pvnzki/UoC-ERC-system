@@ -1,6 +1,7 @@
 import React from "react";
 import { FaUserFriends, FaCheckCircle } from "react-icons/fa";
 import { IoIosPaper, IoIosTime } from "react-icons/io";
+import { FaLightbulb, FaNetworkWired, FaMicrophone, FaDna, FaThLarge } from "react-icons/fa";
 import BuildingSketch from "../../assets/Applicant/Building-Sketch.png";
 
 const AboutProcess = () => {
@@ -10,6 +11,7 @@ const AboutProcess = () => {
     { label: "Pendings", icon: <IoIosTime /> },
     { label: "Success Rate", icon: <FaCheckCircle /> },
   ];
+  
 
   return (
     <div
@@ -41,12 +43,12 @@ const AboutProcess = () => {
       </div>
 
      {/* Process Steps Section with Full Shadow */}
-<div className="shadow-2xl rounded-lg p-10 mx-6 md:mx-20">
+     <div className="shadow-[0px_20px_50px_rgba(0,0,0,0.4)] rounded-lg p-10 mx-6 md:mx-20">
   <div className="flex flex-wrap justify-center items-center gap-12 mt-20 mb-20">
     {steps.map((step, index) => (
       <div
         key={index}
-        className="flex-1 min-w-[180px] max-w-[220px] bg-blue-900 text-white px-6 py-4 flex items-center justify-center font-semibold text-lg rounded-md relative shadow-lg"
+        className="flex-1 min-w-[180px] max-w-[220px] bg-blue-900 text-white px-6 py-4 flex items-center justify-center font-semibold text-lg rounded-md relative shadow-xl"
       >
         {/* Step Content */}
         <span className="flex flex-col items-center gap-2">

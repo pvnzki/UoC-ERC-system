@@ -29,13 +29,13 @@ const Features = () => {
   ];
 
   return (
-    <div className="bg-blue-900 py-12 px-4 md:px-20">
+    <div className="bg-blue-900 py-12 px-4 pb-28 pt-20 md:px-20">
       <h2 className="text-white text-3xl font-bold text-left mb-8">Key Features</h2>
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {features.map((feature, index) => (
           <div
             key={index}
-            className={`${feature.background} rounded-lg p-4 flex flex-col items-center justify-center text-center group hover:scale-105 transition-transform duration-300 relative overflow-hidden h-44`} // Centered content
+            className={`${feature.background} rounded-lg p-4 flex flex-col items-center justify-center text-center group hover:scale-105 transition-transform duration-300 relative overflow-hidden h-44`}
             style={{
               backgroundImage: `url(${feature.icon})`,
               backgroundSize: 'cover',
