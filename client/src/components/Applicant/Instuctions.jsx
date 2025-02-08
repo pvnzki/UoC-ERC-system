@@ -45,7 +45,7 @@ const ResearchInstructions = () => {
       <div className="max-w-3xl mx-auto space-y-8">
         {instructionSections.map((section, index) => (
           // Rendering each instruction section
-          <div key={index} className="bg-white bg-opacity-95 rounded-lg p-6 shadow-[0px_20px_50px_rgba(0,0,0,0.4)]">
+          <div key={index} className=" bg-opacity-95 rounded-lg p-6 shadow-[0px_20px_50px_rgba(0,0,0,0.4)]">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-800 underline">{section.title}</h2>
               <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded-3xl hover:bg-gray-800 text-bold hover:text-white">
