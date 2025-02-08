@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 import { FileText, ClipboardList, Upload, CreditCard, CheckCircle, UploadCloud } from "lucide-react";
 import BuildingSketch from "../../../assets/Applicant/Building-Sketch.png";
 
@@ -12,6 +13,7 @@ const steps = [
 ];
 
 const MakePayment = () => {
+  const navigate = useNavigate(); // Initialize navigation hook
   const [selectedFile, setSelectedFile] = useState(null);
 
   const handleFileChange = (event) => {
@@ -47,29 +49,11 @@ const MakePayment = () => {
           ))}
         </div>
 
-        {/* Upload Section */}
-        <div className="mt-6 bg-gray-100 border border-gray-300 rounded-lg p-6 text-center">
-          <h3 className="text-lg font-semibold text-gray-800">Upload the Receipt of the Payment</h3>
-
-          <label className="mt-4 flex flex-col items-center border-2 border-dashed border-gray-400 bg-white rounded-lg p-6 cursor-pointer">
-            <UploadCloud className="text-blue-500 w-10 h-10" />
-            <p className="text-gray-700 mt-2">Browse Files to upload</p>
-            <input type="file" className="hidden" onChange={handleFileChange} />
-          </label>
-
-          {selectedFile && (
-            <div className="mt-4 flex justify-center items-center bg-gray-200 p-2 rounded-lg">
-              <FileText className="text-gray-600 w-5 h-5 mr-2" />
-              <p className="text-gray-700">{selectedFile.name}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Summary Box */}
-        <div className="mt-6 flex justify-between">
-          <div></div> {/* Empty div for alignment */}
-          <div className="border border-gray-300 rounded-lg bg-gray-100 p-4 w-64">
-            <h4 className="text-lg font-semibold text-gray-800">Summary</h4>
+        {/* Main Content: Payment Summary & Upload Section */}
+        <div className="mt-6 flex flex-col md:flex-row justify-between items-start gap-6">
+          {/* Summary Box - Moved to Left */}
+          <div className="border border-gray-300 rounded-lg bg-gray-100 p-6 w-full md:w-1/3">
+            <h4 className="text-lg font-semibold text-gray-800">Payment Summary</h4>
             <div className="mt-2 text-gray-700">
               <p className="flex justify-between">
                 <span>Application Submission Fee</span>
@@ -95,14 +79,36 @@ const MakePayment = () => {
               </p>
             </div>
           </div>
+
+          {/* Upload Section - Right Side */}
+          <div className="bg-gray-100 border border-gray-300 rounded-lg p-6 flex-1">
+            <h3 className="text-lg font-semibold text-gray-800 text-center">Upload the Receipt of the Payment</h3>
+
+            <label className="mt-4 flex flex-col items-center border-2 border-dashed border-gray-400 bg-white rounded-lg p-6 cursor-pointer">
+              <UploadCloud className="text-blue-500 w-10 h-10" />
+              <p className="text-gray-700 mt-2">Browse Files to upload</p>
+              <input type="file" className="hidden" onChange={handleFileChange} />
+            </label>
+
+            {selectedFile && (
+              <div className="mt-4 flex justify-center items-center bg-gray-200 p-2 rounded-lg">
+                <FileText className="text-gray-600 w-5 h-5 mr-2" />
+                <p className="text-gray-700">{selectedFile.name}</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Navigation Buttons */}
         <div className="flex justify-between mt-6">
-          <button className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg shadow-lg">
+          <button 
+            onClick={() => navigate("/submit-application/choose-research-type")} // Navigate on click
+            className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg shadow-lg"
+          >
             ← Back
           </button>
           <button
+            onClick={() => navigate("/submit-application/confirm-submission")} // Navigate on click
             className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-2 rounded-lg shadow-lg 
                       transition-transform duration-300 transform hover:scale-105 hover:from-blue-600 hover:to-blue-800"
           >

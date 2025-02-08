@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 import { FileText, ClipboardList, Upload, CreditCard, CheckCircle } from "lucide-react";
 import BuildingSketch from "../../../assets/Applicant/Building-Sketch.png";
 
@@ -12,6 +13,7 @@ const steps = [
 ];
 
 const ChooseCategory = () => {
+const navigate = useNavigate(); // Initialize navigation hook
   const [category, setCategory] = useState("");
 
   return (
@@ -68,10 +70,13 @@ const ChooseCategory = () => {
 
         {/* Navigation Buttons */}
         <div className="flex justify-between mt-6">
-          <button className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg shadow-lg">
+          <button 
+          onClick={() => navigate("/submit-application/download-form")} // Navigate on click
+          className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg shadow-lg">
             ← Back
           </button>
           <button
+          onClick={() => navigate("/submit-application/upload-evidence")} // Navigate on click
             className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-2 rounded-lg shadow-lg 
                       transition-transform duration-300 transform hover:scale-105 hover:from-blue-600 hover:to-blue-800"
           >

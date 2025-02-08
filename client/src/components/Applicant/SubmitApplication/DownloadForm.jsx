@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 import { FileText, Upload, ClipboardList, CreditCard, CheckCircle } from "lucide-react";
 import BuildingSketch from "../../../assets/Applicant/Building-Sketch.png";
 
@@ -12,6 +13,8 @@ const steps = [
 ];
 
 const SubmitApplication = () => {
+  const navigate = useNavigate(); // Initialize navigation hook
+
   return (
     <div
       className="min-h-screen flex flex-col items-center p-8 bg-no-repeat bg-cover bg-center"
@@ -56,10 +59,13 @@ const SubmitApplication = () => {
           </div>
         </div>
 
-        {/* Next Button */}
+        {/* Next Button with Navigation */}
         <div className="flex justify-center mt-6">
-          <button className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-2 rounded-lg shadow-lg 
-                      transition-transform duration-300 transform hover:scale-105 hover:from-blue-600 hover:to-blue-800">
+          <button
+            onClick={() => navigate("/submit-application/choose-category")} // Navigate on click
+            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-2 rounded-lg shadow-lg 
+                      transition-transform duration-300 transform hover:scale-105 hover:from-blue-600 hover:to-blue-800"
+          >
             Next →
           </button>
         </div>
