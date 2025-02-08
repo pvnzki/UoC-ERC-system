@@ -22,7 +22,7 @@ const ApplicationProcess = () => {
       <p className="text-blue-600 mb-6 text-center">Choose one to proceed &gt;</p>
       
       {/* Container for the options */}
-      <div className="flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-8 bg-opacity-70 p-8 rounded-lg shadow-lg w-full max-w-5xl">
+      <div className="flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-8 bg-opacity-70 p-8 rounded-lg  shadow-[0px_20px_50px_rgba(0,0,0,0.4)] w-full max-w-5xl">
         {/* Mapping through the options array and rendering each option */}
         {options.map((option, index) => (
           <div
