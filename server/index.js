@@ -1,7 +1,8 @@
 import express from "express";
-const app = express();
 import cors from "cors";
-const pool = require("./db");
+import pool from "./db.js"; // Use import instead of require
+
+const app = express();
 
 // Middleware
 app.use(express.json());
