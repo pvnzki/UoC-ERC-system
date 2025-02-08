@@ -6,6 +6,8 @@ import ApplicationProcess from "../pages/Applicant/AplicationProcess";
 import ContactSupport from "../pages/Applicant/ContactSupport";
 import Login from "../pages/Applicant/Login";
 import SignUp from "../pages/Applicant/SignUp";
+import SubmitApplication from "../pages/Applicant/SubmitApplication";
+import TrackApplication from "../pages/Applicant/TrackApplication";
 
 const ApplicantRoutes = () => {
   return (
@@ -19,6 +21,8 @@ const ApplicantRoutes = () => {
         <Route path="/support" element={<ContactSupport />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/submit-application" element={<SubmitApplication />} />
+        <Route path="/track-application" element={<TrackApplication />} />
 
         {/* add other routes below */}
       </Routes>
