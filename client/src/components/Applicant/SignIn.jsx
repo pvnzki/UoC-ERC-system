@@ -44,7 +44,7 @@ return (
                     <label className="flex items-center text-gray-700">
                         <input type="checkbox" className="mr-2" /> Remember me
                     </label>
-                    <a href="#" className="text-blue-500 text-sm hover:underline">
+                    <a onClick={() => navigate('/forgot-password')} className="text-blue-500 hover:underline cursor-pointer">
                         Forgot password?
                     </a>
                 </div>
