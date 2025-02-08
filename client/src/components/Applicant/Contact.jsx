@@ -42,7 +42,7 @@ const ContactSupport = () => {
         </div>
 
         {/* Contact Form Section */}
-        <div className="p-8 w-full md:w-2/3 bg-white rounded-b-lg md:rounded-b-none md:rounded-r-lg">
+        <div className="p-8 w-full md:w-2/3 rounded-b-lg md:rounded-b-none md:rounded-r-lg">
           <h2 className="text-2xl font-bold text-gray-800">Submit Below Form</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <input className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 transition" type="text" placeholder="First Name" />
