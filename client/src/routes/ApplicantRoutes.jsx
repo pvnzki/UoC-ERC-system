@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import Header from "../components/Applicant/general/Header";
+import Footer from "../components/Applicant/general/Footer";
 import Home from "../pages/Applicant/Home";
 import Guidelines from "../pages/Applicant/Guidelines";
 import ApplicationProcess from "../pages/Applicant/AplicationProcess";
@@ -42,6 +43,8 @@ const ApplicantRoutes = () => {
 
         {/* add other routes below */}
       </Routes>
+      <Footer />
+
     </>
   );
 };
