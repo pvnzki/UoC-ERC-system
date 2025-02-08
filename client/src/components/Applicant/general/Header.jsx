@@ -3,6 +3,7 @@ import Logo from '../../../assets/Applicant/logo-menu.png';
 
 const Navbar = () => {
   const [activeLink, setActiveLink] = useState('Home');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navLinks = [
     { name: 'Home', href: '/' },
@@ -16,11 +17,21 @@ const Navbar = () => {
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo */}
         <div className="flex items-center">
-          <img src={Logo} alt="Logo" className="h-13" />
+          <img src={Logo} alt="Logo" className="h-12" />
         </div>
 
+        {/* Mobile Menu Toggle */}
+        <button
+          className="lg:hidden text-white focus:outline-none"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
+          </svg>
+        </button>
+
         {/* Navigation Links - Modern Style */}
-        <div className="flex space-x-6 ml-10">
+        <div className={`lg:flex space-x-6 ml-10 ${isMenuOpen ? 'block' : 'hidden'} lg:block` }>
           {navLinks.map((link) => (
             <a
               key={link.name}
@@ -40,14 +51,16 @@ const Navbar = () => {
         </div>
 
         {/* Login Button - Enhanced Look */}
-        <div className="flex items-center">
-          <button className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-2.5 rounded-lg 
-                           shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center">
-            <span>Login</span>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-            </svg>
-          </button>
+        <div className="hidden lg:flex items-center">
+          <a href="/login">
+            <button className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-2.5 rounded-lg 
+                             shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center">
+              <span>Login</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </a>
         </div>
       </div>
     </nav>
@@ -55,4 +68,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
