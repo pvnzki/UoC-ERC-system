@@ -1,4 +1,3 @@
-import React from 'react'
 import Instructions from '../../components/Applicant/Instuctions'
 
 function Guidelines() {

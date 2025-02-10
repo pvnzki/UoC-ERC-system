@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, ArrowLeft } from "lucide-react";
 import BuildingSketch from "../../assets/Applicant/Building-Sketch.png"; // Import background image
