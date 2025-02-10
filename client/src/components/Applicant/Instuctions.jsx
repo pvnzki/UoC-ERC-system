@@ -39,10 +39,10 @@ const instructionSections = [
 const ResearchInstructions = () => {
   return (
     <div 
-      className="min-h-screen p-8 bg-no-repeat bg-cover bg-center"
+      className="min-h-screen p-8 bg-no-repeat bg-cover bg-center pt-20 pb-20"
       style={{ backgroundImage: `url(${BuildingSketch})` }} // Applying background image
     >
-      <div className="max-w-3xl mx-auto space-y-8">
+      <div className="max-w-3xl mx-auto space-y-8 ">
         {instructionSections.map((section, index) => (
           // Rendering each instruction section
           <div key={index} className=" bg-opacity-95 rounded-lg p-6 shadow-[0px_20px_50px_rgba(0,0,0,0.4)]">

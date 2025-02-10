@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import Logo from "../../../assets/Applicant/logo-menu.png";
 
 const Navbar = ({ children }) => {
   const [activeLink, setActiveLink] = useState("Home");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
 
   const navLinks = [
     { name: "Home", href: "/" },
@@ -12,14 +14,20 @@ const Navbar = ({ children }) => {
     { name: "Contact Support", href: "/support" },
   ];
 
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const active = navLinks.find((link) => link.href === currentPath);
+    if (active) setActiveLink(active.name);
+  }, [location.pathname]);
+
   return (
     <>
       {/* Sticky Navbar */}
-      <nav className="bg-gradient-to-r from-[#112951] via-[#112950] to-[#2f80ed] p-4 shadow-lg fixed top-0 left-0 w-full z-50">
+      <nav className="bg-gradient-to-r from-[#112951] via-[#112950] to-[#2f80ed] p-4 shadow-lg fixed top-0 left-0 w-full z-50 px-6 lg:px-16">
         <div className="container mx-auto flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center">
-            <img src={Logo} alt="Logo" className="h-16" /> {/* Increased size */}
+            <img src={Logo} alt="Logo" className="h-16 transition-transform duration-300 hover:scale-110" />
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -28,7 +36,7 @@ const Navbar = ({ children }) => {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             <svg
-              className="w-6 h-6"
+              className="w-6 h-6 transition-transform duration-300 hover:scale-110"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
@@ -39,16 +47,21 @@ const Navbar = ({ children }) => {
           </button>
 
           {/* Navigation Links */}
-          <div className={`lg:flex space-x-6 ml-10 ${isMenuOpen ? "block" : "hidden"} lg:block`}>
+          <div className={`lg:flex space-x-6 ml-10 ${isMenuOpen ? "block" : "hidden"} lg:block absolute lg:static top-16 left-0 w-full lg:w-auto bg-[#112951] lg:bg-transparent lg:p-0 p-4 lg:flex-row flex flex-col items-start lg:items-center transition-all duration-300`}>
             {navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
                 onClick={() => setActiveLink(link.name)}
-                className={`relative px-4 py-2 rounded-lg transition-all duration-300 text-white/80 hover:text-white 
-                  ${activeLink === link.name ? "font-semibold" : ""}`}
+                className={`relative px-4 py-2 rounded-lg transition-all duration-300 text-white/80 hover:text-white w-full lg:w-auto
+                  ${activeLink === link.name ? "font-semibold text-white" : ""}`}
               >
                 {link.name}
+                {/* Underline effect on active */}
+                <div
+                  className={`absolute bottom-0 left-0 w-0 h-0.5 bg-white transition-all duration-500 
+                  ${activeLink === link.name ? "w-full" : "group-hover:w-full"}`}
+                ></div>
               </a>
             ))}
           </div>
@@ -71,7 +84,7 @@ const Navbar = ({ children }) => {
         </div>
       </nav>
 
-      {/* Layout - Push Content Down */}
+      {/* Layout - No Animation When Navigating Pages */}
       <div className="pt-20">{children}</div>
     </>
   );
