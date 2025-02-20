@@ -8,10 +8,7 @@ const authorizeRoles = require("./utils/auth-roles");
 
 const corsOptions = {
   origin: function (origin, callback) {
-    const allowedOrigins = [
-      "http://localhost:5173",
-      "https://trollius-client.onrender.com",
-    ];
+    const allowedOrigins = ["http://localhost:5173"];
     if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
       callback(null, true);
     } else {
