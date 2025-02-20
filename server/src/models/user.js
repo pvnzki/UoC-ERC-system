@@ -41,12 +41,20 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         unique: true,
       },
-      name: {
+      first_name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      last_name: {
         type: DataTypes.STRING,
         allowNull: false,
       },
       phone: {
         type: DataTypes.STRING,
+      },
+      occupation: {
+        type: DataTypes.STRING,
+        allowNull: false,
       },
       password: {
         type: DataTypes.STRING,
@@ -61,7 +69,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       validity: {
         type: DataTypes.BOOLEAN,
-        defaultValue: true,
+        defaultValue: false,
       },
     },
     {
