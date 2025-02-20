@@ -14,7 +14,7 @@ module.exports = {
         allowNull: false,
         unique: true,
       },
-      nic: {
+      identity_number: {
         type: Sequelize.STRING,
         allowNull: false,
         unique: true,
