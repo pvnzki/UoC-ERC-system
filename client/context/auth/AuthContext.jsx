@@ -46,7 +46,7 @@ export const AuthContextProvider = ({ children }) => {
     if (isValid.success) {
       setIsAuthenticated(true);
       const user = {
-        type: isValid.user.data.user_type,
+        role: isValid.user.data.user_role,
       };
       setUser(user);
       return isValid.user;

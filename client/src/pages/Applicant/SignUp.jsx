@@ -13,6 +13,7 @@ const SignUp = () => {
     occupation: "",
     password: "",
     confirmPassword: "",
+    address: "",
   });
 
   const handleChange = (e) => {
@@ -72,6 +73,18 @@ const SignUp = () => {
               value={formData.email}
               onChange={handleChange}
               placeholder="Enter your email"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-gray-700">Address</label>
+            <input
+              type="test"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              placeholder="Enter your address"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>

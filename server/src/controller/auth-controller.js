@@ -39,6 +39,7 @@ exports.validateUser = async (req, res) => {
     const token = jwt.sign(
       {
         id: user.id,
+        role: user.role,
         email: user.email,
       },
       process.env.JWT_SECRET,
@@ -46,7 +47,7 @@ exports.validateUser = async (req, res) => {
     );
 
     const userData = {
-      user_code: user.email,
+      user_role: user.role,
     };
 
     res
@@ -67,9 +68,18 @@ exports.registerUser = async (req, res) => {
       phone,
       occupation,
       identity_number,
+      address,
     } = req.body;
 
-    if (!email || !password || !first_name || !last_name || !occupation) {
+    if (
+      !email ||
+      !password ||
+      !first_name ||
+      !last_name ||
+      !occupation ||
+      !identity_number ||
+      !address
+    ) {
       return res.status(400).json({
         message:
           "Email, Password, First Name, Last Name & Occupation is required",
@@ -84,9 +94,12 @@ exports.registerUser = async (req, res) => {
       phone,
       occupation,
       identity_number,
+      address,
       created_at: Date.now(),
       role: "applicant",
     });
+
+    console.log("Address: ", address);
 
     const token = jwt.sign(
       {
