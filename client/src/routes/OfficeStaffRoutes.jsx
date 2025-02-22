@@ -4,6 +4,9 @@ import Home from "../pages/OfficeStaff/Office_Home.jsx";
 import Office_Header from "../components/OfficeStaff/genaral/Office_Header.jsx";
 import Sidebar from "../components/OfficeStaff/genaral/SideBar.jsx";
 import ApplicationDetails from "../components/OfficeStaff/genaral/ApplicationDetails.jsx";
+import ApprovedApplications from "../pages/OfficeStaff/ApprovedApplications.jsx";
+import ReturendApplications from "../pages/OfficeStaff/ReturnApplication.jsx";
+import Eval from "../pages/OfficeStaff/Evaluated.jsx";
 
 const CTSCorARWSChairRoutes = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -25,6 +28,16 @@ const CTSCorARWSChairRoutes = () => {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/:id" element={<ApplicationDetails />} />
+            <Route path="/eval/:id" element={<Eval />} />
+            <Route
+              path="/approved-applications"
+              element={<ApprovedApplications />}
+            />
+            <Route
+              path="/returned-applications"
+              element={<ReturendApplications />}
+            />
+            <Route path="/evaluated" element={<Eval />} />
 
             {/* Add other routes here */}
           </Routes>
