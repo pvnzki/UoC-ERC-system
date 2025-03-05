@@ -5,15 +5,27 @@ import Approved from "../../../assets/OfficeStaff/approved.png";
 import Help from "../../../assets/OfficeStaff/help.png";
 import Logout from "../../../assets/OfficeStaff/logout.png";
 import Returned from "../../../assets/OfficeStaff/returned.png";
+import { useNavigate } from "react-router-dom";
 
 const Sidebar = () => {
+  const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState("all");
 
   const menuItems = [
-    { id: "all", label: "All Applications", icon: All },
-    { id: "approved", label: "Approved Applications", icon: Approved },
-    { id: "returned", label: "Returned Applications", icon: Returned },
+    { id: "all", label: "All Applications", icon: All, url: "/officestaff" },
+    {
+      id: "approved",
+      label: "Approved Applications",
+      icon: Approved,
+      url: "/officestaff/approved-applications",
+    },
+    {
+      id: "returned",
+      label: "Returned Applications",
+      icon: Returned,
+      url: "/officestaff/returned-applications",
+    },
   ];
 
   const bottomMenuItems = [
@@ -21,8 +33,9 @@ const Sidebar = () => {
     { id: "logout", label: "Logout", icon: Logout },
   ];
 
-  const handleNavigation = (pageId) => {
+  const handleNavigation = (pageId, url) => {
     setCurrentPage(pageId);
+    navigate(url);
   };
 
   return (
@@ -45,7 +58,7 @@ const Sidebar = () => {
           {menuItems.map((item) => (
             <li key={item.id}>
               <button
-                onClick={() => handleNavigation(item.id)}
+                onClick={() => handleNavigation(item.id, item.url)}
                 className={`w-full flex items-center px-4 py-3 text-sm transition-colors
                   ${
                     currentPage === item.id
