@@ -1,4 +1,3 @@
-import React from 'react'
 import SignIn from '../../components/Applicant/SignIn'
 
 function Login() {

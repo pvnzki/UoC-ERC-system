@@ -1,4 +1,3 @@
-import React from "react";
 import { CheckCircle, FileText, Share2 } from "lucide-react";
 import BuildingSketch from "../../assets/Applicant/Building-Sketch.png";
 
