@@ -5,12 +5,12 @@ import React from "react";
 
 const Home = () => {
   return (
-    <div>
+    <div className="overflow-hidden">
       <Hero />
       <Features />
       <AboutProcess />
     </div>
-  )
-}
+  );
+};
 
 export default Home;
