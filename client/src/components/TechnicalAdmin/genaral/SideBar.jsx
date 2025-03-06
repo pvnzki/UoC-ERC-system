@@ -13,7 +13,7 @@ const Sidebar = () => {
   const [currentPage, setCurrentPage] = useState("all");
 
   const menuItems = [
-    { id: "all", label: "All Applications", icon: All, url: "/officestaff" },
+    { id: "all", label: "All Applications", icon: All, url: "/Technical-Admin" },
     {
       id: "approved",
       label: "Approved Applications",
