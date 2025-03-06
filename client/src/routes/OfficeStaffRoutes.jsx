@@ -8,7 +8,7 @@ import ApprovedApplications from "../pages/OfficeStaff/ApprovedApplications.jsx"
 import ReturendApplications from "../pages/OfficeStaff/ReturnApplication.jsx";
 import Eval from "../pages/OfficeStaff/Evaluated.jsx";
 
-const CTSCorARWSChairRoutes = () => {
+const OfficeStaffRoutes = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
@@ -47,4 +47,4 @@ const CTSCorARWSChairRoutes = () => {
   );
 };
 
-export default CTSCorARWSChairRoutes;
+export default OfficeStaffRoutes;

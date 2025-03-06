@@ -21,7 +21,7 @@ const App = () => {
 
           {/* ERC Technical Committee Member Routes */}
           <Route
-            path="/erctechnical/*"
+            path="/Technical-Admin/*"
             element={<ERCTechnicalCommitteeRoutes />}
           />
 
