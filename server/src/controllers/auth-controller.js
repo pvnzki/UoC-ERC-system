@@ -27,7 +27,6 @@ exports.validateUser = async (req, res) => {
       return res.status(400).json({ message: "Email & Password is required" });
     }
 
-    // const users = await db.User.findAll();
     const user = await db.User.findOne({
       where: { email: email, password: password },
     });
@@ -36,9 +35,42 @@ exports.validateUser = async (req, res) => {
       return res.status(400).json({ message: "User not found" });
     }
 
+    console.log("User: ", user.role);
+
+    // Initialize userData with common fields
+    const userData = {
+      user_id: user.user_id,
+      role: user.role,
+      email: user.email,
+    };
+
+    // If user is an applicant, fetch the applicant record
+    if (user.role === "applicant") {
+      const applicant = await db.Applicant.findOne({
+        where: { user_id: user.user_id },
+      });
+
+      if (applicant) {
+        userData.applicant_id = applicant.applicant_id;
+        userData.applicant_category = applicant.applicant_category;
+      }
+    }
+    // If user is a committee member, fetch committee member record
+    else if (user.role === "committee_member") {
+      const committeeMember = await db.Committee_Member.findOne({
+        where: { user_id: user.user_id },
+      });
+
+      if (committeeMember) {
+        userData.member_id = committeeMember.member_id;
+        userData.committee_id = committeeMember.committee_id;
+        userData.is_active = committeeMember.is_active;
+      }
+    }
+
     const token = jwt.sign(
       {
-        id: user.id,
+        id: user.user_id,
         role: user.role,
         email: user.email,
       },
@@ -46,14 +78,11 @@ exports.validateUser = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES }
     );
 
-    const userData = {
-      user_role: user.role,
-    };
-
     res
       .status(200)
       .json({ message: "User found.", auth: token, data: userData });
   } catch (error) {
+    console.error("Login error:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -66,58 +95,90 @@ exports.registerUser = async (req, res) => {
       first_name,
       last_name,
       phone,
-      occupation,
+      applicant_category,
       identity_number,
       address,
     } = req.body;
 
+    // Validate required fields
     if (
       !email ||
       !password ||
       !first_name ||
       !last_name ||
-      !occupation ||
+      !applicant_category ||
       !identity_number ||
       !address
     ) {
       return res.status(400).json({
         message:
-          "Email, Password, First Name, Last Name & Occupation is required",
+          "Email, Password, Name, Applicant Category, Identity Number, and Address are required",
       });
     }
 
-    const user = await db.User.create({
-      email,
-      password,
-      first_name,
-      last_name,
-      phone,
-      occupation,
-      identity_number,
-      address,
-      created_at: Date.now(),
-      role: "applicant",
-    });
+    // Begin transaction to ensure both user and applicant are created
+    const transaction = await db.sequelize.transaction();
 
-    console.log("Address: ", address);
+    try {
+      // First create the user
+      const user = await db.User.create(
+        {
+          email,
+          password,
+          first_name,
+          last_name,
+          phone,
+          address,
+          identity_number,
+          role: "applicant",
+          created_at: new Date(),
+          validity: true, // Assuming new users are valid by default
+        },
+        { transaction }
+      );
 
-    const token = jwt.sign(
-      {
-        id: user.user_id,
+      // Then create the applicant record linked to this user
+      const applicant = await db.Applicant.create(
+        {
+          user_id: user.user_id,
+          applicant_category,
+        },
+        { transaction }
+      );
+
+      // Commit the transaction
+      await transaction.commit();
+
+      // Generate token for authentication
+      const token = jwt.sign(
+        {
+          id: user.user_id,
+          email: user.email,
+          role: user.role,
+          applicant_id: applicant.applicant_id,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES }
+      );
+
+      const userData = {
+        user_id: user.user_id,
+        applicant_id: applicant.applicant_id,
         email: user.email,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES }
-    );
+      };
 
-    const userData = {
-      user_code: user.email,
-    };
-
-    res
-      .status(200)
-      .json({ message: "User registered.", auth: token, data: userData });
+      res.status(201).json({
+        message: "Applicant registered successfully",
+        auth: token,
+        data: userData,
+      });
+    } catch (error) {
+      // If any error occurs, rollback the transaction
+      await transaction.rollback();
+      throw error;
+    }
   } catch (error) {
+    console.error("Registration error:", error);
     res.status(500).json({ error: error.message });
   }
 };

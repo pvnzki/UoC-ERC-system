@@ -33,15 +33,8 @@ module.exports = (sequelize, DataTypes) => {
           key: "user_id",
         },
       },
-      contact_details: {
-        type: DataTypes.STRING,
-      },
       applicant_category: {
         type: DataTypes.STRING,
-        allowNull: false,
-      },
-      registration_date: {
-        type: DataTypes.DATE,
         allowNull: false,
       },
     },

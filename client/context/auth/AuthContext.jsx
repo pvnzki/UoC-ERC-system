@@ -45,10 +45,31 @@ export const AuthContextProvider = ({ children }) => {
     const isValid = await userLogin(username, password);
     if (isValid.success) {
       setIsAuthenticated(true);
+
+      // Store all relevant data returned from the backend
       const user = {
-        role: isValid.user.data.user_role,
+        user_id: isValid.user_id,
+        role: isValid.role,
+        email: isValid.email,
+        // Store role-specific IDs based on user type
+        ...(isValid.applicant_id && {
+          applicant_id: isValid.applicant_id,
+          applicant_category: isValid.applicant_category,
+        }),
+        ...(isValid.member_id && {
+          member_id: isValid.member_id,
+          committee_id: isValid.committee_id,
+          is_active: isValid.is_active,
+        }),
       };
+
       setUser(user);
+
+      // Also store the auth token if you're handling it separately
+      // if (isValid.user.auth) {
+      //   localStorage.setItem('token', isValid.user.auth);
+      // }
+
       return isValid.user;
     }
 

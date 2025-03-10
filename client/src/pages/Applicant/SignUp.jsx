@@ -10,7 +10,7 @@ const SignUp = () => {
     email: "",
     phone: "",
     identity_number: "",
-    occupation: "",
+    applicant_category: "",
     password: "",
     confirmPassword: "",
     address: "",
@@ -118,9 +118,9 @@ const SignUp = () => {
               Select Your Occupation
             </label>
             <select
-              name="occupation"
+              name="applicant_category"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={formData.occupation}
+              value={formData.applicant_category}
               onChange={handleChange}
             >
               <option value="">-- Select --</option>

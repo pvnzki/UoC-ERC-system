@@ -42,7 +42,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      represent_type: {
+      research_type: {
         type: DataTypes.STRING,
         allowNull: false,
       },
@@ -66,7 +66,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         allowNull: false,
       },
-      equity_date: {
+      expiry_date: {
         type: DataTypes.DATE,
         allowNull: false,
       },

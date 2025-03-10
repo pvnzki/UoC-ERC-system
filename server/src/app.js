@@ -4,6 +4,7 @@ const cors = require("cors");
 const express = require("express");
 const db = require("./models"); // Sequelize models
 const authRoutes = require("./routes/auth-routes");
+const applicationRoutes = require("./routes/application-routes");
 const authorizeRoles = require("./utils/auth-roles");
 
 const corsOptions = {
@@ -28,6 +29,7 @@ app.use(cors(corsOptions));
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/applications", authorizeRoles("applicant"), applicationRoutes);
 
 // Sync database
 db.sequelize.sync().then(() => {
