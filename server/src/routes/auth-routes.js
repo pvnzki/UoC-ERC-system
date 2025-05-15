@@ -10,4 +10,6 @@ router.post("/create-admin", authController.createAdminUser);
 
 router.get("/validate", authController.validateToken);
 
+router.post('/init-admin', authController.createInitialAdmin);
+
 module.exports = router;
