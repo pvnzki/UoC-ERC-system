@@ -34,8 +34,27 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
       applicant_category: {
-        type: DataTypes.STRING,
+        type: DataTypes.ENUM(
+          "academic_staff",
+          "extended_faculty",
+          "students",
+          "pgim_trainers",
+          "researcher_mou",
+          "researcher_health"
+        ),
         allowNull: false,
+      },
+      evidence_url: {
+        type: DataTypes.TEXT, // Store the Cloudinary URL
+        allowNull: true, // Can be null for students
+      },
+      evidence_public_id: {
+        type: DataTypes.STRING, // Store Cloudinary public_id for deletion if needed
+        allowNull: true,
+      },
+      application_status: {
+        type: DataTypes.ENUM("pending", "approved", "rejected"),
+        defaultValue: "pending",
       },
     },
     {
