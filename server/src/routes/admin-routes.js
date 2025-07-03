@@ -11,7 +11,7 @@ const router = express.Router();
 router.use(isAuthenticated, isAdmin);
 
 // Account Management Routes (3.1.x)
-router.post("/users", adminController.createUser);
+router.post("/users", adminController.createUser); //(committee member, staff, or admin)
 router.get("/users", adminController.listUsers);
 router.delete("/users/:userId", adminController.deleteUser);
 router.get("/committees/reviewers", adminController.listCommitteeReviewers);

@@ -3,6 +3,7 @@ const db = require("../models");
 const cloudinary = require("../config/cloudinary");
 const multer = require("multer");
 const path = require("path");
+const bcrypt = require("bcrypt");
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
@@ -53,15 +54,17 @@ exports.validateUser = async (req, res) => {
       return res.status(400).json({ message: "Email & Password is required" });
     }
 
-    const user = await db.User.findOne({
-      where: { email: email, password: password },
-    });
+    const user = await db.User.findOne({ where: { email: email } });
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
 
-    console.log("User: ", user.role);
+    // Use bcrypt to compare hashed password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid password" });
+    }
 
     // Initialize userData with common fields
     const userData = {
@@ -69,6 +72,9 @@ exports.validateUser = async (req, res) => {
       role: user.role,
       email: user.email,
     };
+    if (user.role === "ADMIN") {
+      userData.isSuperAdmin = user.isSuperAdmin;
+    }
 
     // If user is an applicant, fetch the applicant record
     if (user.role === "applicant") {
@@ -94,15 +100,17 @@ exports.validateUser = async (req, res) => {
       }
     }
 
-    const token = jwt.sign(
-      {
-        id: user.user_id,
-        role: user.role,
-        email: user.email,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES }
-    );
+    const tokenPayload = {
+      id: user.user_id,
+      role: user.role,
+      email: user.email,
+    };
+    if (user.role === "ADMIN") {
+      tokenPayload.isSuperAdmin = user.isSuperAdmin;
+    }
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES,
+    });
 
     res
       .status(200)
@@ -187,10 +195,11 @@ exports.registerUser = async (req, res) => {
 
     try {
       // First create the user
+      const hashedPassword = await bcrypt.hash(password, 10);
       const user = await db.User.create(
         {
           email,
-          password,
+          password: hashedPassword,
           first_name,
           last_name,
           phone,
@@ -199,6 +208,7 @@ exports.registerUser = async (req, res) => {
           role: "applicant",
           created_at: new Date(),
           validity: true, // Assuming new users are valid by default
+          isSuperAdmin: false,
         },
         { transaction }
       );
@@ -369,28 +379,28 @@ exports.createAdminUser = async (req, res) => {
 //     const adminExists = await db.User.findOne({
 //       where: { role: 'ADMIN' }
 //     });
-    
+
 //     if (adminExists) {
-//       return res.status(400).json({ 
-//         message: "Admin user already exists", 
+//       return res.status(400).json({
+//         message: "Admin user already exists",
 //         adminId: adminExists.user_id,
 //         email: adminExists.email
 //       });
 //     }
-    
+
 //     // Check if email already exists
 //     const emailExists = await db.User.findOne({
 //       where: { email: 'admin@uoc.lk' }
 //     });
-    
+
 //     if (emailExists) {
-//       return res.status(400).json({ 
-//         message: "Email already in use", 
+//       return res.status(400).json({
+//         message: "Email already in use",
 //         userId: emailExists.user_id,
 //         email: emailExists.email
 //       });
 //     }
-    
+
 //     // Create user with all required fields
 //     const user = await db.User.create({
 //       // Don't specify user_id, let the database assign it
@@ -403,7 +413,7 @@ exports.createAdminUser = async (req, res) => {
 //       created_at: new Date(),
 //       validity: false // Based on your schema
 //     });
-    
+
 //     // Create admin record
 //     await db.Admin.create({
 //       user_id: user.user_id,
@@ -411,8 +421,8 @@ exports.createAdminUser = async (req, res) => {
 //       created_at: new Date(),
 //       updated_at: new Date()
 //     });
-    
-//     res.status(201).json({ 
+
+//     res.status(201).json({
 //       message: 'Initial admin user created successfully',
 //       userId: user.user_id,
 //       email: 'admin@uoc.lk',
@@ -420,7 +430,7 @@ exports.createAdminUser = async (req, res) => {
 //     });
 //   } catch (error) {
 //     console.error('Error creating initial admin:', error);
-    
+
 //     // More detailed error reporting
 //     if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
 //       const validationErrors = error.errors.map(err => ({
@@ -429,14 +439,14 @@ exports.createAdminUser = async (req, res) => {
 //         type: err.type,
 //         value: err.value
 //       }));
-      
-//       return res.status(400).json({ 
-//         error: error.name, 
-//         details: validationErrors 
+
+//       return res.status(400).json({
+//         error: error.name,
+//         details: validationErrors
 //       });
 //     }
-    
-//     res.status(500).json({ 
+
+//     res.status(500).json({
 //       error: error.message,
 //       name: error.name
 //     });
@@ -450,35 +460,39 @@ exports.createInitialAdmin = async (req, res) => {
       "SELECT * FROM \"Users\" WHERE role = 'ADMIN'",
       { type: db.sequelize.QueryTypes.SELECT }
     );
-    
+
     if (adminUsers.length > 0) {
-      return res.status(200).json({ 
-        message: "Admin user already exists", 
+      return res.status(200).json({
+        message: "Admin user already exists",
         adminId: adminUsers[0].user_id,
         email: adminUsers[0].email,
-        password: "admin123" // Default password for testing
+        password: "admin123", // Default password for testing
       });
     }
-    
+
     // Find the maximum user_id in the Users table
     const [maxIdResult] = await db.sequelize.query(
-      "SELECT COALESCE(MAX(user_id), 0) + 1 as next_id FROM \"Users\"",
+      'SELECT COALESCE(MAX(user_id), 0) + 1 as next_id FROM "Users"',
       { type: db.sequelize.QueryTypes.SELECT }
     );
-    
+
     const nextId = maxIdResult.next_id;
-    
+
+    // Hash the password before inserting
+    const plainPassword = "admin123";
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+
     // Insert the admin user with an explicit ID
     await db.sequelize.query(`
       INSERT INTO "Users" (
         user_id, email, identity_number, first_name, last_name, 
-        password, role, created_at, validity
+        password, role, created_at, validity, isSuperAdmin
       ) VALUES (
         ${nextId}, 'admin@uoc.lk', 'ADMIN${Date.now()}', 'Admin', 'User', 
-        'admin123', 'ADMIN', NOW(), false
+        '${hashedPassword}', 'ADMIN', NOW(), false, true
       )
     `);
-    
+
     // Create admin record
     await db.sequelize.query(`
       INSERT INTO "Admins" (
@@ -487,19 +501,57 @@ exports.createInitialAdmin = async (req, res) => {
         ${nextId}, 'ERC_TECHNICAL', NOW(), NOW()
       )
     `);
-    
-    res.status(201).json({ 
-      message: 'Initial admin user created successfully',
+
+    res.status(201).json({
+      message: "Initial admin user created successfully",
       userId: nextId,
-      email: 'admin@uoc.lk',
-      password: 'admin123'
+      email: "admin@uoc.lk",
+      password: plainPassword,
     });
   } catch (error) {
-    console.error('Error creating initial admin:', error);
-    res.status(500).json({ 
+    console.error("Error creating initial admin:", error);
+    res.status(500).json({
       error: error.message,
       name: error.name,
-      detail: error.parent?.detail || 'No details available'
+      detail: error.parent?.detail || "No details available",
     });
+  }
+};
+
+exports.deleteAdminUser = async (req, res) => {
+  try {
+    const email = "admin@uoc.lk";
+    // Find the user
+    const user = await db.User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: "Admin user not found" });
+    }
+    // Delete from Admins table first (if exists)
+    await db.Admin.destroy({ where: { user_id: user.user_id } });
+    // Delete from Users table
+    await db.User.destroy({ where: { user_id: user.user_id } });
+    return res.status(200).json({ message: "Admin user deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting admin user:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+exports.activateAdminUser = async (req, res) => {
+  try {
+    const email = "admin@uoc.lk";
+    const user = await db.User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: "Admin user not found" });
+    }
+    user.validity = true;
+    await user.save();
+    return res.status(200).json({
+      message: "Admin user activated successfully",
+      userId: user.user_id,
+    });
+  } catch (error) {
+    console.error("Error activating admin user:", error);
+    return res.status(500).json({ error: error.message });
   }
 };
