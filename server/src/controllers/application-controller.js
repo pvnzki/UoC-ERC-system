@@ -198,3 +198,342 @@ exports.deleteApplication = async (req, res) => {
     return res.status(500).send(error.message);
   }
 };
+
+exports.getApplicationStatus = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const userId = req.user.id; // Assuming user ID is available from auth middleware
+
+    // Find the application with all related data
+    const application = await db.Application.findOne({
+      where: { application_id: applicationId },
+      include: [
+        {
+          model: db.Applicant,
+          as: "applicant",
+          where: { user_id: userId }, // Ensure user owns this application
+        },
+        {
+          model: db.Review,
+          as: "reviews",
+          include: [
+            {
+              model: db.User,
+              as: "reviewer",
+              attributes: ["user_id", "first_name", "last_name"],
+            },
+          ],
+          order: [["review_date", "DESC"]],
+        },
+        {
+          model: db.Document,
+          as: "documents",
+        },
+        {
+          model: db.Payment,
+          as: "payment",
+        },
+      ],
+    });
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Application not found or you do not have permission to view it",
+      });
+    }
+
+    // Get the latest review status
+    const latestReview =
+      application.reviews && application.reviews.length > 0
+        ? application.reviews[0]
+        : null;
+
+    res.status(200).json({
+      success: true,
+      application: {
+        application_id: application.application_id,
+        applicant_id: application.applicant_id,
+        research_type: application.research_type,
+        application_type: application.application_type,
+        status: application.status,
+        submission_date: application.submission_date,
+        last_updated: application.last_updated,
+        is_extension: application.is_extension,
+        expiry_date: application.expiry_date,
+        latest_review: latestReview
+          ? {
+              review_id: latestReview.review_id,
+              comments: latestReview.comments,
+              outcome: latestReview.outcome,
+              review_date: latestReview.review_date,
+              reviewer: latestReview.reviewer,
+            }
+          : null,
+        documents_count: application.documents
+          ? application.documents.length
+          : 0,
+        payment_status: application.payment
+          ? application.payment.payment_status
+          : "pending",
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching application status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
+// Get all applications for a user
+exports.getUserApplications = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { page = 1, limit = 10, status } = req.query;
+
+    const whereClause = {};
+    if (status) {
+      whereClause.status = status;
+    }
+
+    const applications = await db.Application.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: db.Applicant,
+          as: "applicant",
+          where: { user_id: userId },
+          attributes: [],
+        },
+        {
+          model: db.Review,
+          as: "reviews",
+          limit: 1,
+          order: [["review_date", "DESC"]],
+          required: false,
+        },
+      ],
+      order: [["submission_date", "DESC"]],
+      limit: parseInt(limit),
+      offset: (parseInt(page) - 1) * parseInt(limit),
+    });
+
+    res.status(200).json({
+      success: true,
+      applications: applications.rows,
+      pagination: {
+        total: applications.count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(applications.count / parseInt(limit)),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching user applications:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
+// Update application status (for admin/reviewer use)
+exports.updateApplicationStatus = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const { status, comments } = req.body;
+    const reviewerId = req.user.id;
+
+    // Validate status
+    const validStatuses = [
+      "submitted",
+      "review",
+      "revisions",
+      "approved",
+      "rejected",
+    ];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid status. Valid statuses are: " + validStatuses.join(", "),
+      });
+    }
+
+    // Check if application exists
+    const application = await db.Application.findByPk(applicationId);
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found",
+      });
+    }
+
+    // Update application status
+    await application.update({
+      status: status,
+      last_updated: new Date(),
+    });
+
+    // Create a review record
+    const review = await db.Review.create({
+      application_id: applicationId,
+      reviewer_id: reviewerId,
+      comments: comments || "",
+      outcome: status,
+      review_date: new Date(),
+      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Application status updated successfully",
+      application: {
+        application_id: application.application_id,
+        status: application.status,
+        last_updated: application.last_updated,
+      },
+      review: {
+        review_id: review.review_id,
+        outcome: review.outcome,
+        review_date: review.review_date,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating application status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
+// Get application details with full information
+exports.getApplicationDetails = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const userId = req.user.id;
+
+    const application = await db.Application.findOne({
+      where: { application_id: applicationId },
+      include: [
+        {
+          model: db.Applicant,
+          as: "applicant",
+          where: { user_id: userId },
+        },
+        {
+          model: db.Review,
+          as: "reviews",
+          include: [
+            {
+              model: db.User,
+              as: "reviewer",
+              attributes: ["user_id", "first_name", "last_name", "email"],
+            },
+          ],
+          order: [["review_date", "DESC"]],
+        },
+        {
+          model: db.Document,
+          as: "documents",
+          order: [["upload_date", "DESC"]],
+        },
+        {
+          model: db.Payment,
+          as: "payment",
+        },
+      ],
+    });
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Application not found or you do not have permission to view it",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      application,
+    });
+  } catch (error) {
+    console.error("Error fetching application details:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
+// Get application statistics for dashboard
+exports.getApplicationStats = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const stats = await db.Application.findAll({
+      attributes: [
+        "status",
+        [
+          db.Application.sequelize.fn(
+            "COUNT",
+            db.Application.sequelize.col("status")
+          ),
+          "count",
+        ],
+      ],
+      include: [
+        {
+          model: db.Applicant,
+          as: "applicant",
+          where: { user_id: userId },
+          attributes: [],
+        },
+      ],
+      group: ["status"],
+      raw: true,
+    });
+
+    const statusCounts = {
+      submitted: 0,
+      review: 0,
+      revisions: 0,
+      approved: 0,
+      rejected: 0,
+    };
+
+    stats.forEach((stat) => {
+      if (statusCounts.hasOwnProperty(stat.status)) {
+        statusCounts[stat.status] = parseInt(stat.count);
+      }
+    });
+
+    const totalApplications = Object.values(statusCounts).reduce(
+      (sum, count) => sum + count,
+      0
+    );
+
+    res.status(200).json({
+      success: true,
+      stats: {
+        total: totalApplications,
+        by_status: statusCounts,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching application statistics:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
