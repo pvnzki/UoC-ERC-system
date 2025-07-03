@@ -14,15 +14,20 @@ router.use(isAuthenticated, isAdmin);
 router.post("/users", adminController.createUser); //(committee member, staff, or admin)
 router.get("/users", adminController.listUsers);
 router.delete("/users/:userId", adminController.deleteUser);
-router.get("/committees/reviewers", adminController.listCommitteeReviewers);
-router.patch("/users/status", adminController.updateUserStatus);
-router.post("/committees", adminController.createCommittee);
-router.get("/committees", adminController.listCommittees);
-router.post("/committees/members", adminController.addMembersToCommittee);
-router.get("/table-structure/:tableName", adminController.getTableStructure);
+// router.get("/committees/reviewers", adminController.listCommitteeReviewers); //no idea about reviewer
+router.patch("/users/status", adminController.updateUserStatus); //update the status of a user(validity of the user)
+router.post("/committees", adminController.createCommittee); //create a new committee
+router.get("/committees", adminController.listCommittees); //take thelist of committees
+router.post("/committees/members", adminController.addMembersToCommittee); //add members to a committee
+router.delete(
+  "/committees/members",
+  adminController.removeMembersFromCommittee
+); //remove members from a committee (Not from the system)
+
+router.get("/table-structure/:tableName", adminController.getTableStructure); //get the structure of a table
+router.post("/update-schema", adminController.updateDatabaseSchema);
 
 // Preliminary Review Routes (3.2.x)
-router.post("/update-schema", adminController.updateDatabaseSchema);
 router.get("/check-applications-table", adminController.checkApplicationsTable);
 router.get("/check-applicant-table", adminController.checkApplicantTable);
 router.get("/check-models", adminController.checkModels);

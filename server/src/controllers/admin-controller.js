@@ -1,7 +1,14 @@
 const { User, Admin, Committee, CommitteeMember } = require("../models");
 const db = require("../models"); // Add this line to import the db object
 const bcrypt = require("bcrypt");
-const { sendMail } = require("../utils/email-service");
+const {
+  sendMail,
+  buildUserWelcomeEmail,
+  buildUserDeletionEmail,
+  buildCommitteeAdditionEmail,
+  buildCommitteeRemovalEmail,
+  buildUserStatusUpdateEmail,
+} = require("../utils/email-service");
 const { generateRandomPassword } = require("../utils/password-utils");
 const e = require("express");
 
@@ -13,12 +20,7 @@ const adminController = {
       const { email, firstName, lastName, role, committeeId, userType } =
         req.body;
 
-      // Only super admin can create admins
-      if (role === "ADMIN" && !req.user.isSuperAdmin) {
-        return res
-          .status(403)
-          .json({ error: "Only the super admin can create admin users." });
-      }
+      // Remove super admin check for admin creation
 
       // Check if user with this email already exists
       const existingUser = await User.findOne({ where: { email } });
@@ -28,8 +30,19 @@ const adminController = {
           .json({ error: "User with this email already exists" });
       }
 
-      // If adding a committee member, check if committee exists
-      // (Removed duplicate committee existence check here)
+      // Only check committee existence and insert into CommitteeMembers if committeeId is provided
+      if ((role === "COMMITTEE_MEMBER" || role === "STAFF") && committeeId) {
+        const committeeExists = await db.sequelize.query(
+          `SELECT 1 FROM "Committees" WHERE committee_id = ${committeeId}`,
+          { type: db.sequelize.QueryTypes.SELECT }
+        );
+
+        if (committeeExists.length === 0) {
+          return res.status(400).json({
+            error: `Committee with ID ${committeeId} does not exist. Please create the committee first.`,
+          });
+        }
+      }
 
       // Find the maximum user_id and increment it
       const [maxIdResult] = await db.sequelize.query(
@@ -73,7 +86,8 @@ const adminController = {
         )
       `);
       } else if (role === "COMMITTEE_MEMBER" || role === "STAFF") {
-        if (committeeId) {
+        // Only insert into CommitteeMembers if committeeId is provided
+        if ((role === "COMMITTEE_MEMBER" || role === "STAFF") && committeeId) {
           await db.sequelize.query(`
           INSERT INTO "CommitteeMembers" (
             user_id, committee_id, role, is_active, created_at, updated_at
@@ -82,63 +96,33 @@ const adminController = {
             true, NOW(), NOW()
           )
         `);
-        } else {
-          // If no committee is specified, just create the user without a committee assignment
-          console.log(`User ${email} created without committee assignment`);
-        }
-      }
-      if ((role === "COMMITTEE_MEMBER" || role === "STAFF") && committeeId) {
-        const committeeExists = await db.sequelize.query(
-          `SELECT 1 FROM "Committees" WHERE committee_id = ${committeeId}`,
-          { type: db.sequelize.QueryTypes.SELECT }
-        );
-
-        if (committeeExists.length === 0) {
-          return res.status(400).json({
-            error: `Committee with ID ${committeeId} does not exist. Please create the committee first.`,
-          });
+        } else if (
+          (role === "COMMITTEE_MEMBER" || role === "STAFF") &&
+          !committeeId
+        ) {
+          // No committee assignment at creation; can be assigned later
+          console.log(
+            `User ${email} created as ${role} without committee assignment`
+          );
         }
       }
 
-      const htmlEmail = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
-      <div style="text-align: center; margin-bottom: 20px;">
-        <img src="https://www.cmb.ac.lk/wp-content/themes/university/images/logo.png" alt="University of Colombo Logo" style="max-width: 150px;">
-        <h2 style="color: #003366;">Ethics Review Committee System</h2>
-      </div>
-
-      <p>Dear ${firstName} ${lastName},</p>
-      
-      <p>Welcome to the <strong>University of Colombo Ethics Review Committee System</strong>. Your account has been created successfully.</p>
-      
-      <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-        <p style="margin: 5px 0;"><strong>Account Details:</strong></p>
-        <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
-        <p style="margin: 5px 0;"><strong>Temporary Password:</strong> ${password}</p>
-      </div>
-      
-      <p>Please log in at <a href="https://erc.cmb.ac.lk/login" style="color: #0066cc;">https://erc.cmb.ac.lk/login</a> and change your password immediately for security reasons.</p>
-      
-      <p>If you have any questions or need assistance, please contact our support team.</p>
-      
-      <p>
-        Best regards,<br>
-        ERC Admin Team<br>
-        <em>University of Colombo</em>
-      </p>
-      
-      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666;">
-        <p>This is an automated message. Please do not reply to this email.</p>
-        <p>If you did not request this account, please contact us immediately.</p>
-      </div>
-    </div>
-    `;
+      // Use the email utility to build personalized email content
+      const { subject, html, text } =
+        require("../utils/email-service").buildUserWelcomeEmail({
+          firstName,
+          lastName,
+          email,
+          password,
+          role,
+          committeeId,
+        });
 
       await sendMail({
         to: email,
-        subject: "Welcome to the UoC Ethics Review Committee System",
-        text: `Welcome to the University of Colombo Ethics Review Committee System. Your account has been created. Email: ${email}, Temporary Password: ${password}`,
-        html: htmlEmail,
+        subject,
+        text,
+        html,
       });
 
       console.log("Email sent to:", email);
@@ -202,6 +186,39 @@ const adminController = {
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
+
+      // Send deletion notification email before deleting
+      try {
+        const { subject, html, text } = buildUserDeletionEmail({
+          firstName: user.first_name,
+          lastName: user.last_name,
+          email: user.email,
+          role: user.role,
+        });
+
+        await sendMail({
+          to: user.email,
+          subject,
+          text,
+          html,
+        });
+
+        console.log("Deletion notification email sent to:", user.email);
+      } catch (emailError) {
+        console.error(
+          "Failed to send deletion notification email:",
+          emailError
+        );
+        // Continue with deletion even if email fails
+      }
+
+      // If user is an admin, delete from Admins table first
+      if (user.role === "ADMIN") {
+        await Admin.destroy({ where: { user_id: userId } });
+      }
+
+      // Remove user from all committees before deleting user
+      await CommitteeMember.destroy({ where: { user_id: userId } });
 
       // Delete the user
       await user.destroy();
@@ -308,40 +325,45 @@ const adminController = {
   // 3.1.5 Block/Remove accounts
   async updateUserStatus(req, res) {
     try {
-      const { userId, action } = req.body;
+      const { userId, validity, reason } = req.body;
 
-      if (!userId || !action) {
-        return res
-          .status(400)
-          .json({ error: "User ID and action are required" });
-      }
-
+      // Check if user exists
       const user = await User.findByPk(userId);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
 
-      if (action === "block" && user.validity === false) {
-        return res.status(400).json({ error: "User is already blocked" });
-      }
-      if (action === "unblock" && user.validity === true) {
-        return res.status(400).json({ error: "User is already unblocked" });
-      }
+      // Update user validity
+      await user.update({ validity });
 
-      if (action === "block") {
-        user.validity = false;
-      } else if (action === "unblock") {
-        user.validity = true;
-      } else {
-        return res.status(400).json({ error: "Invalid action" });
-      }
+      // Send status update notification email
+      try {
+        const { subject, html, text } = buildUserStatusUpdateEmail({
+          firstName: user.first_name,
+          lastName: user.last_name,
+          email: user.email,
+          role: user.role,
+          newStatus: validity,
+          reason: reason,
+        });
 
-      await user.save();
+        await sendMail({
+          to: user.email,
+          subject,
+          text,
+          html,
+        });
+
+        console.log("Status update notification sent to:", user.email);
+      } catch (emailError) {
+        console.error("Failed to send status update notification:", emailError);
+        // Continue even if email fails
+      }
 
       return res.status(200).json({
-        message: `User ${action}ed successfully`,
-        userId: user.user_id,
-        validity: user.validity,
+        message: "User status updated successfully",
+        userId,
+        validity,
       });
     } catch (error) {
       console.error("Error updating user status:", error);
@@ -538,28 +560,197 @@ const adminController = {
     try {
       const { committeeId, members } = req.body;
 
-      const committee = await Committee.findByPk(committeeId);
+      // Use raw SQL to check committee existence
+      const [committee] = await db.sequelize.query(
+        'SELECT * FROM "Committees" WHERE committee_id = ?',
+        {
+          replacements: [committeeId],
+          type: db.sequelize.QueryTypes.SELECT,
+        }
+      );
       if (!committee) {
         return res.status(404).json({ error: "Committee not found" });
       }
 
-      const committeeMembers = members.map((member) => ({
-        user_id: member.userId,
-        committee_id: committeeId,
-        role: member.role || "MEMBER",
-        is_active: true,
-      }));
+      const errors = [];
+      const committeeMembers = [];
+      const successfulAdditions = [];
 
-      await CommitteeMember.bulkCreate(committeeMembers);
+      for (const member of members) {
+        // Check if user exists
+        const user = await User.findByPk(member.userId);
+        if (!user) {
+          errors.push(`User with ID ${member.userId} does not exist.`);
+          continue;
+        }
+        // Check if already a member
+        const alreadyMember = await CommitteeMember.findOne({
+          where: { user_id: member.userId, committee_id: committeeId },
+        });
+        if (alreadyMember) {
+          errors.push(
+            `User with ID ${member.userId} is already a member of committee ${committeeId}.`
+          );
+          continue;
+        }
+        // Add to list to create
+        committeeMembers.push({
+          user_id: member.userId,
+          committee_id: committeeId,
+          role: member.role || "MEMBER",
+          is_active: true,
+        });
+        successfulAdditions.push({ user, role: member.role || "MEMBER" });
+      }
+
+      if (committeeMembers.length > 0) {
+        await CommitteeMember.bulkCreate(committeeMembers);
+
+        // Send notification emails to successfully added members
+        for (const { user, role } of successfulAdditions) {
+          try {
+            const { subject, html, text } = buildCommitteeAdditionEmail({
+              firstName: user.first_name,
+              lastName: user.last_name,
+              email: user.email,
+              committeeName: committee.committee_name,
+              committeeType: committee.committee_type,
+              role: role,
+            });
+
+            await sendMail({
+              to: user.email,
+              subject,
+              text,
+              html,
+            });
+
+            console.log("Committee addition notification sent to:", user.email);
+          } catch (emailError) {
+            console.error(
+              "Failed to send committee addition notification:",
+              emailError
+            );
+            // Continue even if email fails
+          }
+        }
+      }
+
+      if (errors.length > 0) {
+        return res.status(207).json({
+          message: "Some members could not be added.",
+          errors,
+          added: committeeMembers.map((m) => m.user_id),
+        });
+      }
 
       return res.status(200).json({
         message: "Members added to committee successfully",
+        added: committeeMembers.map((m) => m.user_id),
       });
     } catch (error) {
       console.error("Error adding members to committee:", error);
       return res
         .status(500)
         .json({ error: "Failed to add members to committee" });
+    }
+  },
+
+  // Remove members from committee
+  async removeMembersFromCommittee(req, res) {
+    try {
+      const { committeeId, memberIds } = req.body;
+
+      // Use raw SQL to check committee existence
+      const [committee] = await db.sequelize.query(
+        'SELECT * FROM "Committees" WHERE committee_id = ?',
+        {
+          replacements: [committeeId],
+          type: db.sequelize.QueryTypes.SELECT,
+        }
+      );
+      if (!committee) {
+        return res.status(404).json({ error: "Committee not found" });
+      }
+
+      const errors = [];
+      const successfulRemovals = [];
+
+      for (const memberId of memberIds) {
+        // Check if user exists
+        const user = await User.findByPk(memberId);
+        if (!user) {
+          errors.push(`User with ID ${memberId} does not exist.`);
+          continue;
+        }
+
+        // Check if user is a member of this committee
+        const committeeMember = await CommitteeMember.findOne({
+          where: { user_id: memberId, committee_id: committeeId },
+        });
+        if (!committeeMember) {
+          errors.push(
+            `User with ID ${memberId} is not a member of committee ${committeeId}.`
+          );
+          continue;
+        }
+
+        // Store member info for email notification
+        successfulRemovals.push({
+          user,
+          role: committeeMember.role,
+        });
+
+        // Remove from committee
+        await committeeMember.destroy();
+      }
+
+      // Send notification emails to successfully removed members
+      for (const { user, role } of successfulRemovals) {
+        try {
+          const { subject, html, text } = buildCommitteeRemovalEmail({
+            firstName: user.first_name,
+            lastName: user.last_name,
+            email: user.email,
+            committeeName: committee.committee_name,
+            committeeType: committee.committee_type,
+            role: role,
+          });
+
+          await sendMail({
+            to: user.email,
+            subject,
+            text,
+            html,
+          });
+
+          console.log("Committee removal notification sent to:", user.email);
+        } catch (emailError) {
+          console.error(
+            "Failed to send committee removal notification:",
+            emailError
+          );
+          // Continue even if email fails
+        }
+      }
+
+      if (errors.length > 0) {
+        return res.status(207).json({
+          message: "Some members could not be removed.",
+          errors,
+          removed: successfulRemovals.map((r) => r.user.user_id),
+        });
+      }
+
+      return res.status(200).json({
+        message: "Members removed from committee successfully",
+        removed: successfulRemovals.map((r) => r.user.user_id),
+      });
+    } catch (error) {
+      console.error("Error removing members from committee:", error);
+      return res
+        .status(500)
+        .json({ error: "Failed to remove members from committee" });
     }
   },
 };

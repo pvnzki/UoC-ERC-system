@@ -72,9 +72,6 @@ exports.validateUser = async (req, res) => {
       role: user.role,
       email: user.email,
     };
-    if (user.role === "ADMIN") {
-      userData.isSuperAdmin = user.isSuperAdmin;
-    }
 
     // If user is an applicant, fetch the applicant record
     if (user.role === "applicant") {
@@ -105,9 +102,6 @@ exports.validateUser = async (req, res) => {
       role: user.role,
       email: user.email,
     };
-    if (user.role === "ADMIN") {
-      tokenPayload.isSuperAdmin = user.isSuperAdmin;
-    }
     const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES,
     });
@@ -208,7 +202,6 @@ exports.registerUser = async (req, res) => {
           role: "applicant",
           created_at: new Date(),
           validity: true, // Assuming new users are valid by default
-          isSuperAdmin: false,
         },
         { transaction }
       );
@@ -486,10 +479,10 @@ exports.createInitialAdmin = async (req, res) => {
     await db.sequelize.query(`
       INSERT INTO "Users" (
         user_id, email, identity_number, first_name, last_name, 
-        password, role, created_at, validity, isSuperAdmin
+        password, role, created_at, validity
       ) VALUES (
         ${nextId}, 'admin@uoc.lk', 'ADMIN${Date.now()}', 'Admin', 'User', 
-        '${hashedPassword}', 'ADMIN', NOW(), false, true
+        '${hashedPassword}', 'ADMIN', NOW(), false
       )
     `);
 
