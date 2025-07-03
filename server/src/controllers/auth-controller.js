@@ -1,10 +1,36 @@
 const jwt = require("jsonwebtoken");
 const db = require("../models");
+const cloudinary = require("../config/cloudinary");
+const multer = require("multer");
+const path = require("path");
+
+// Configure multer for file uploads
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Check file type
+    const allowedTypes = /jpeg|jpg|png|pdf/;
+    const extname = allowedTypes.test(
+      path.extname(file.originalname).toLowerCase()
+    );
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error("Only PDF and image files (JPEG, JPG, PNG) are allowed"));
+    }
+  },
+});
 
 exports.validateToken = (req, res) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) {
-    res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ message: "Unauthorized" });
   }
 
   try {
@@ -13,7 +39,7 @@ exports.validateToken = (req, res) => {
     res.status(200).json({ valid: true, user: decoded });
   } catch (error) {
     if (error.name === "TokenExpiredError") {
-      res.status(401).json({ message: "Token expired" });
+      return res.status(401).json({ message: "Token expired" });
     }
     res.status(401).json({ message: "Invalid token" });
   }
@@ -87,6 +113,29 @@ exports.validateUser = async (req, res) => {
   }
 };
 
+// Helper function to upload file to Cloudinary
+const uploadToCloudinary = (buffer, originalname) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "auto", // Automatically detect file type
+        folder: "evidence_documents", // Organize files in a folder
+        public_id: `evidence_${Date.now()}_${originalname.split(".")[0]}`,
+        use_filename: true,
+        unique_filename: true,
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+    uploadStream.end(buffer);
+  });
+};
+
 exports.registerUser = async (req, res) => {
   try {
     const {
@@ -98,6 +147,7 @@ exports.registerUser = async (req, res) => {
       applicant_category,
       identity_number,
       address,
+      evidence_url, // This will be set by the upload endpoint
     } = req.body;
 
     // Validate required fields
@@ -113,6 +163,22 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({
         message:
           "Email, Password, Name, Applicant Category, Identity Number, and Address are required",
+      });
+    }
+
+    // Check if evidence is required for non-student categories
+    const requiresEvidence = applicant_category !== "students";
+    if (requiresEvidence && !evidence_url) {
+      return res.status(400).json({
+        message: "Evidence document is required for this occupation category",
+      });
+    }
+
+    // Check if email already exists
+    const existingUser = await db.User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(409).json({
+        message: "Email already registered",
       });
     }
 
@@ -142,6 +208,7 @@ exports.registerUser = async (req, res) => {
         {
           user_id: user.user_id,
           applicant_category,
+          evidence_url: evidence_url || null, // Store the evidence URL
         },
         { transaction }
       );
@@ -165,6 +232,8 @@ exports.registerUser = async (req, res) => {
         user_id: user.user_id,
         applicant_id: applicant.applicant_id,
         email: user.email,
+        role: user.role,
+        applicant_category: applicant.applicant_category,
       };
 
       res.status(201).json({
@@ -179,6 +248,51 @@ exports.registerUser = async (req, res) => {
     }
   } catch (error) {
     console.error("Registration error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// File upload endpoint
+exports.uploadEvidence = async (req, res) => {
+  try {
+    // Use multer middleware to handle file upload
+    upload.single("evidence")(req, res, async (err) => {
+      if (err) {
+        if (err instanceof multer.MulterError) {
+          if (err.code === "LIMIT_FILE_SIZE") {
+            return res
+              .status(400)
+              .json({ message: "File size must be less than 10MB" });
+          }
+        }
+        return res.status(400).json({ message: err.message });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      try {
+        // Upload to Cloudinary
+        const result = await uploadToCloudinary(
+          req.file.buffer,
+          req.file.originalname
+        );
+
+        res.status(200).json({
+          message: "File uploaded successfully",
+          file_url: result.secure_url,
+          public_id: result.public_id,
+        });
+      } catch (uploadError) {
+        console.error("Cloudinary upload error:", uploadError);
+        res
+          .status(500)
+          .json({ message: "Failed to upload file to cloud storage" });
+      }
+    });
+  } catch (error) {
+    console.error("Upload error:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -223,12 +337,13 @@ exports.createAdminUser = async (req, res) => {
       last_name,
       phone,
       role,
-      created_at: Date.now(),
+      created_at: new Date(),
+      validity: true,
     });
 
     // 7. Return the created admin user (excluding sensitive data)
     const adminData = {
-      id: adminUser.id,
+      user_id: adminUser.user_id,
       email: adminUser.email,
       first_name: adminUser.first_name,
       last_name: adminUser.last_name,

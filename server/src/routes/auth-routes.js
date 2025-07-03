@@ -12,4 +12,6 @@ router.get("/validate", authController.validateToken);
 
 router.post('/init-admin', authController.createInitialAdmin);
 
+router.post("/upload/evidence", authController.uploadEvidence);
+
 module.exports = router;
