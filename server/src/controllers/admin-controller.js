@@ -917,30 +917,6 @@ const adminController = {
       return res.status(500).json({ error: error.message });
     }
   },
-
-  // TEMPORARY: Add all missing columns to Applicants table
-  async addAllMissingApplicantColumns(req, res) {
-    try {
-      await db.sequelize.query(`
-        ALTER TABLE "Applicants"
-        ADD COLUMN IF NOT EXISTS first_name VARCHAR(255) NULL,
-        ADD COLUMN IF NOT EXISTS last_name VARCHAR(255) NULL,
-        ADD COLUMN IF NOT EXISTS email VARCHAR(255) NULL,
-        ADD COLUMN IF NOT EXISTS applicant_category VARCHAR(255) NULL,
-        ADD COLUMN IF NOT EXISTS evidence_url TEXT NULL,
-        ADD COLUMN IF NOT EXISTS evidence_public_id VARCHAR(255) NULL,
-        ADD COLUMN IF NOT EXISTS application_status VARCHAR(255) NULL;
-      `);
-      return res
-        .status(200)
-        .json({
-          message:
-            "All missing columns added to Applicants table (if not already present).",
-        });
-    } catch (error) {
-      return res.status(500).json({ error: error.message });
-    }
-  },
 };
 
 module.exports = adminController;
