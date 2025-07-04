@@ -32,14 +32,8 @@ router.get("/check-applications-table", adminController.checkApplicationsTable);
 router.get("/check-applicant-table", adminController.checkApplicantTable); //check the structure of the applicants table
 router.get("/check-models", adminController.checkModels); //checking the associations between the tables
 router.get("/applications", adminReviewController.getApplications); //Done
-router.put(
-  "/applications/:applicationId/review",
-  adminReviewController.reviewApplication
-);
-router.post(
-  "/applications/:applicationId/email",
-  adminReviewController.sendApplicantEmail
-);
+router.put("/applications/:applicationId/review",adminReviewController.reviewApplication);
+router.post("/applications/:applicationId/email",adminReviewController.sendApplicantEmail);
 
 // Committee Meeting Routes (3.3.x)
 router.post("/meetings", meetingController.createMeeting);

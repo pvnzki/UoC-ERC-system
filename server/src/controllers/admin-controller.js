@@ -12,6 +12,20 @@ const {
 const { generateRandomPassword } = require("../utils/password-utils");
 const e = require("express");
 
+// Helper to remove null fields from objects
+function removeNullFields(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map(removeNullFields);
+  } else if (obj && typeof obj === "object") {
+    return Object.fromEntries(
+      Object.entries(obj)
+        .filter(([_, v]) => v !== null)
+        .map(([k, v]) => [k, removeNullFields(v)])
+    );
+  }
+  return obj;
+}
+
 // Account Management Controllers
 const adminController = {
   // 3.1.1, 3.1.2, 3.1.3 Create accounts for committee members, staff, chairs
