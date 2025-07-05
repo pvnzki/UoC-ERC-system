@@ -23,8 +23,12 @@ function Login() {
     if (isAuthenticated) {
       toast.success("Login successful");
       setTimeout(() => {
-        if (isAuthenticated.data.user_role === "admin") {
-          navigate("/dashboard");
+        // Check for admin role (case-insensitive)
+        if (
+          isAuthenticated.data.role === "ADMIN" ||
+          isAuthenticated.data.role === "admin"
+        ) {
+          navigate("/admin");
         } else {
           navigate("/");
         }
