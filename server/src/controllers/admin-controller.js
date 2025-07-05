@@ -12,6 +12,20 @@ const {
 const { generateRandomPassword } = require("../utils/password-utils");
 const e = require("express");
 
+// Helper to remove null fields from objects
+function removeNullFields(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map(removeNullFields);
+  } else if (obj && typeof obj === "object") {
+    return Object.fromEntries(
+      Object.entries(obj)
+        .filter(([_, v]) => v !== null)
+        .map(([k, v]) => [k, removeNullFields(v)])
+    );
+  }
+  return obj;
+}
+
 // Account Management Controllers
 const adminController = {
   // 3.1.1, 3.1.2, 3.1.3 Create accounts for committee members, staff, chairs
@@ -371,27 +385,27 @@ const adminController = {
     }
   },
 
-  async updateDatabaseSchema(_, res) {
-    try {
-      //add columns applicant_category, first_name, last_name, email to Applicants table
-      await db.sequelize.query(`
-      ALTER TABLE "Applicants" 
-      ADD COLUMN IF NOT EXISTS applicant_category VARCHAR(255),
-      ADD COLUMN IF NOT EXISTS first_name VARCHAR(255),
-      ADD COLUMN IF NOT EXISTS last_name VARCHAR(255),
-      ADD COLUMN IF NOT EXISTS email VARCHAR(255);
-    `);
+  // async updateDatabaseSchema(_, res) {
+  //   try {
+  //     //add columns applicant_category, first_name, last_name, email to Applicants table
+  //     await db.sequelize.query(`
+  //     ALTER TABLE "Applicants"
+  //     ADD COLUMN IF NOT EXISTS applicant_category VARCHAR(255),
+  //     ADD COLUMN IF NOT EXISTS first_name VARCHAR(255),
+  //     ADD COLUMN IF NOT EXISTS last_name VARCHAR(255),
+  //     ADD COLUMN IF NOT EXISTS email VARCHAR(255);
+  //   `);
 
-      //remove column user_id from Applicants table
-      await db.sequelize.query(`
-      ALTER TABLE "Applicants" 
-      DROP COLUMN IF EXISTS user_id;
-    `);
-    } catch (error) {
-      console.error("Error updating database schema:", error);
-      return res.status(500).json({ error: error.message });
-    }
-  },
+  //     //remove column user_id from Applicants table
+  //     await db.sequelize.query(`
+  //     ALTER TABLE "Applicants"
+  //     DROP COLUMN IF EXISTS user_id;
+  //   `);
+  //   } catch (error) {
+  //     console.error("Error updating database schema:", error);
+  //     return res.status(500).json({ error: error.message });
+  //   }
+  // },
 
   async checkApplicationsTable(req, res) {
     try {
@@ -471,7 +485,7 @@ const adminController = {
         (key) => typeof db[key] === "function" && key !== "Sequelize"
       );
 
-      // Check Application model associations
+      //get all the associations of the models
       const applicationAssociations = [];
       if (db.Application && typeof db.Application.associations === "object") {
         Object.keys(db.Application.associations).forEach((assoc) => {
@@ -485,11 +499,93 @@ const adminController = {
         });
       }
 
+      // Check Committee model associations
+      const committeeAssociations = [];
+      if (db.Committee && typeof db.Committee.associations === "object") {
+        Object.keys(db.Committee.associations).forEach((assoc) => {
+          const association = db.Committee.associations[assoc];
+          committeeAssociations.push({
+            name: assoc,
+            type: association.associationType,
+            target: association.target.name,
+            foreignKey: association.foreignKey,
+          });
+        });
+      }
+
+      // Check CommitteeMember model associations
+      const committeeMemberAssociations = [];
+      if (
+        db.CommitteeMember &&
+        typeof db.CommitteeMember.associations === "object"
+      ) {
+        Object.keys(db.CommitteeMember.associations).forEach((assoc) => {
+          const association = db.CommitteeMember.associations[assoc];
+          committeeMemberAssociations.push({
+            name: assoc,
+            type: association.associationType,
+            target: association.target.name,
+            foreignKey: association.foreignKey,
+          });
+        });
+      }
+
+      // Check Meeting model associations
+
+      const meetingAssociations = [];
+      if (db.Meeting && typeof db.Meeting.associations === "object") {
+        Object.keys(db.Meeting.associations).forEach((assoc) => {
+          const association = db.Meeting.associations[assoc];
+          meetingAssociations.push({
+            name: assoc,
+            type: association.associationType,
+            target: association.target.name,
+            foreignKey: association.foreignKey,
+          });
+        });
+      }
+
+      // Check MeetingDecision model associations
+      const meetingDecisionAssociations = [];
+      if (
+        db.MeetingDecision &&
+        typeof db.MeetingDecision.associations === "object"
+      ) {
+        Object.keys(db.MeetingDecision.associations).forEach((assoc) => {
+          const association = db.MeetingDecision.associations[assoc];
+          meetingDecisionAssociations.push({
+            name: assoc,
+            type: association.associationType,
+            target: association.target.name,
+            foreignKey: association.foreignKey,
+          });
+        });
+      }
+
+      // Check User model associations
+      const userAssociations = [];
+      if (db.User && typeof db.User.associations === "object") {
+        Object.keys(db.User.associations).forEach((assoc) => {
+          const association = db.User.associations[assoc];
+          userAssociations.push({
+            name: assoc,
+            type: association.associationType,
+            target: association.target.name,
+            foreignKey: association.foreignKey,
+          });
+        });
+      }
+
       return res.status(200).json({
         models,
         applicationModel: db.Application ? true : false,
         applicantModel: db.Applicant ? true : false,
         applicationAssociations,
+        committeeAssociations,
+        committeeMemberAssociations,
+        meetingAssociations,
+        meetingDecisionAssociations,
+        userAssociations,
       });
     } catch (error) {
       console.error("Error checking models:", error);
@@ -751,6 +847,88 @@ const adminController = {
       return res
         .status(500)
         .json({ error: "Failed to remove members from committee" });
+    }
+  },
+
+  // TEMPORARY: Add missing columns to Applications table
+  async addMissingApplicationColumns(req, res) {
+    try {
+      await db.sequelize.query(`
+        ALTER TABLE "Applications"
+        ADD COLUMN IF NOT EXISTS admin_comments TEXT NULL,
+        ADD COLUMN IF NOT EXISTS preliminary_check_date TIMESTAMP WITH TIME ZONE NULL,
+        ADD COLUMN IF NOT EXISTS decision_date TIMESTAMP WITH TIME ZONE NULL;
+      `);
+      return res.status(200).json({
+        message:
+          "Missing columns added to Applications table (if not already present).",
+      });
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
+  },
+
+  // TEMPORARY: Add all missing columns to Applications table
+  async addAllMissingApplicationColumns(req, res) {
+    try {
+      await db.sequelize.query(`
+        ALTER TABLE "Applications"
+        ADD COLUMN IF NOT EXISTS admin_comments TEXT NULL,
+        ADD COLUMN IF NOT EXISTS preliminary_check_date TIMESTAMP WITH TIME ZONE NULL,
+        ADD COLUMN IF NOT EXISTS decision_date TIMESTAMP WITH TIME ZONE NULL,
+        ADD COLUMN IF NOT EXISTS is_extension BOOLEAN DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS expiry_date TIMESTAMP WITH TIME ZONE NULL,
+        ADD COLUMN IF NOT EXISTS last_updated TIMESTAMP WITH TIME ZONE NULL,
+        ADD COLUMN IF NOT EXISTS assigned_committee_id INTEGER NULL,
+        ADD COLUMN IF NOT EXISTS status VARCHAR(255) DEFAULT 'DRAFT',
+        ADD COLUMN IF NOT EXISTS submission_date TIMESTAMP WITH TIME ZONE NULL,
+        ADD COLUMN IF NOT EXISTS application_type VARCHAR(255) NULL,
+        ADD COLUMN IF NOT EXISTS research_type VARCHAR(255) NULL,
+        ADD COLUMN IF NOT EXISTS applicant_id INTEGER NULL,
+        ADD COLUMN IF NOT EXISTS application_id SERIAL PRIMARY KEY;
+      `);
+      // Add foreign key for assigned_committee_id
+      await db.sequelize.query(`
+        DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT 1 FROM information_schema.table_constraints
+            WHERE constraint_name = 'fk_assigned_committee'
+              AND table_name = 'Applications'
+          ) THEN
+            ALTER TABLE "Applications"
+            ADD CONSTRAINT fk_assigned_committee
+            FOREIGN KEY (assigned_committee_id)
+            REFERENCES "Committees"(committee_id)
+            ON UPDATE CASCADE
+            ON DELETE SET NULL;
+          END IF;
+        END$$;
+      `);
+      // Add foreign key for applicant_id
+      await db.sequelize.query(`
+        DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT 1 FROM information_schema.table_constraints
+            WHERE constraint_name = 'fk_applicant_id'
+              AND table_name = 'Applications'
+          ) THEN
+            ALTER TABLE "Applications"
+            ADD CONSTRAINT fk_applicant_id
+            FOREIGN KEY (applicant_id)
+            REFERENCES "Applicants"(applicant_id)
+            ON UPDATE CASCADE
+            ON DELETE SET NULL;
+          END IF;
+        END$$;
+      `);
+      return res.status(200).json({
+        message:
+          "All missing columns and foreign keys added to Applications table (if not already present).",
+      });
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
     }
   },
 };
