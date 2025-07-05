@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import { toast } from 'react-toastify';
-import { Loader, CheckCircle, Mail, AlertTriangle } from 'lucide-react';
+import React, { useState } from "react";
+import { toast } from "react-toastify";
+import { Loader, CheckCircle, Mail, AlertTriangle } from "lucide-react";
 
 const CreateUserForm = ({ onSubmit, committees }) => {
   const [formData, setFormData] = useState({
-    email: '',
-    firstName: '',
-    lastName: '',
-    role: '',
-    committeeId: '',
-    userType: ''
+    email: "",
+    firstName: "",
+    lastName: "",
+    role: "",
+    committeeId: "",
+    userType: "",
   });
   const [loading, setLoading] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -18,7 +18,7 @@ const CreateUserForm = ({ onSubmit, committees }) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -31,36 +31,54 @@ const CreateUserForm = ({ onSubmit, committees }) => {
   const handleConfirmSubmit = async () => {
     setLoading(true);
     try {
+      console.log("Submitting user data:", formData);
+
+      // Validate required fields based on role
+      if (formData.role === "COMMITTEE_MEMBER" && !formData.committeeId) {
+        throw new Error("Committee is required for Committee Members");
+      }
+      if (formData.role === "ADMIN" && !formData.userType) {
+        throw new Error("Admin Type is required for Administrators");
+      }
+
       const result = await onSubmit(formData);
-      
+      console.log("User creation result:", result);
+
       // Show success notification
       toast.success(
         <div className="flex items-center gap-2">
           <CheckCircle className="text-green-500" size={18} />
           <div>
             <p className="font-semibold">User created successfully!</p>
-            <p className="text-sm">An email has been sent with login credentials.</p>
+            <p className="text-sm">
+              An email has been sent with login credentials.
+            </p>
           </div>
         </div>
       );
-      
+
       // Reset form after successful creation
       setFormData({
-        email: '',
-        firstName: '',
-        lastName: '',
-        role: '',
-        committeeId: '',
-        userType: ''
+        email: "",
+        firstName: "",
+        lastName: "",
+        role: "",
+        committeeId: "",
+        userType: "",
       });
     } catch (error) {
+      console.error("Error creating user:", error);
       // Show error notification
       toast.error(
         <div className="flex items-center gap-2">
           <AlertTriangle className="text-red-500" size={18} />
           <div>
             <p className="font-semibold">Failed to create user</p>
-            <p className="text-sm">{error.message || 'Please try again'}</p>
+            <p className="text-sm">
+              {error.response?.data?.error ||
+                error.message ||
+                "Please try again"}
+            </p>
           </div>
         </div>
       );
@@ -77,18 +95,25 @@ const CreateUserForm = ({ onSubmit, committees }) => {
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mb-6 relative">
       <h2 className="text-xl font-semibold mb-4">Create New User</h2>
-      
+
       {/* Confirmation Dialog */}
       {showConfirmation && (
         <div className="fixed inset-0 bg-black/80 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-semibold mb-3">Confirm User Creation</h3>
+            <h3 className="text-xl font-semibold mb-3">
+              Confirm User Creation
+            </h3>
             <p className="mb-4">
-              Are you sure you want to create an account for <strong>{formData.firstName} {formData.lastName}</strong>?
+              Are you sure you want to create an account for{" "}
+              <strong>
+                {formData.firstName} {formData.lastName}
+              </strong>
+              ?
             </p>
             <p className="mb-4 text-sm flex items-center gap-2">
               <Mail size={16} className="text-blue-500" />
-              An email with login credentials will be sent to <strong>{formData.email}</strong>.
+              An email with login credentials will be sent to{" "}
+              <strong>{formData.email}</strong>.
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -109,7 +134,7 @@ const CreateUserForm = ({ onSubmit, committees }) => {
                     Creating...
                   </>
                 ) : (
-                  'Confirm & Create'
+                  "Confirm & Create"
                 )}
               </button>
             </div>
@@ -118,9 +143,15 @@ const CreateUserForm = ({ onSubmit, committees }) => {
       )}
 
       {/* Form Content */}
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+      >
         <div>
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="email"
+          >
             Email
           </label>
           <input
@@ -133,9 +164,12 @@ const CreateUserForm = ({ onSubmit, committees }) => {
             required
           />
         </div>
-        
+
         <div>
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="firstName">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="firstName"
+          >
             First Name
           </label>
           <input
@@ -148,9 +182,12 @@ const CreateUserForm = ({ onSubmit, committees }) => {
             required
           />
         </div>
-        
+
         <div>
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="lastName">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="lastName"
+          >
             Last Name
           </label>
           <input
@@ -163,9 +200,12 @@ const CreateUserForm = ({ onSubmit, committees }) => {
             required
           />
         </div>
-        
+
         <div>
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="role">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="role"
+          >
             Role
           </label>
           <select
@@ -182,10 +222,13 @@ const CreateUserForm = ({ onSubmit, committees }) => {
             <option value="STAFF">Staff</option>
           </select>
         </div>
-        
-        {formData.role === 'COMMITTEE_MEMBER' && (
+
+        {formData.role === "COMMITTEE_MEMBER" && (
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="committeeId">
+            <label
+              className="block text-gray-700 text-sm font-bold mb-2"
+              htmlFor="committeeId"
+            >
               Committee
             </label>
             <select
@@ -197,18 +240,33 @@ const CreateUserForm = ({ onSubmit, committees }) => {
               required
             >
               <option value="">Select Committee</option>
-              {committees.map(committee => (
-                <option key={committee.committee_id} value={committee.committee_id}>
-                  {committee.committee_name} ({committee.committee_type})
-                </option>
-              ))}
+              {committees && committees.length > 0 ? (
+                committees.map((committee) => (
+                  <option
+                    key={committee.committee_id}
+                    value={committee.committee_id}
+                  >
+                    {committee.committee_name} ({committee.committee_type})
+                  </option>
+                ))
+              ) : (
+                <option value="" disabled>No committees available</option>
+              )}
             </select>
+            {committees && committees.length === 0 && (
+              <p className="text-red-500 text-xs mt-1">
+                No committees available. Please create a committee first.
+              </p>
+            )}
           </div>
         )}
-        
-        {formData.role === 'ADMIN' && (
+
+        {formData.role === "ADMIN" && (
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="userType">
+            <label
+              className="block text-gray-700 text-sm font-bold mb-2"
+              htmlFor="userType"
+            >
               Admin Type
             </label>
             <select
@@ -225,7 +283,7 @@ const CreateUserForm = ({ onSubmit, committees }) => {
             </select>
           </div>
         )}
-        
+
         <div className="md:col-span-2 flex justify-end mt-4">
           <button
             type="submit"
@@ -238,7 +296,7 @@ const CreateUserForm = ({ onSubmit, committees }) => {
                 Creating...
               </>
             ) : (
-              'Create User'
+              "Create User"
             )}
           </button>
         </div>

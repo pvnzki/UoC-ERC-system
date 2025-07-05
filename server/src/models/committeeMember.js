@@ -14,7 +14,7 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "committee_id",
         as: "committee",
       });
-      
+
       // CommitteeMember has many Application reviews
       CommitteeMember.hasMany(models.ApplicationReview, {
         foreignKey: "reviewer_id",
@@ -48,15 +48,15 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
       role: {
-        type: DataTypes.ENUM('CHAIR', 'MEMBER', 'STAFF'),
+        type: DataTypes.ENUM("CHAIR", "MEMBER", "SECRETARY"),
         allowNull: false,
-        defaultValue: 'MEMBER',
+        defaultValue: "MEMBER",
       },
       is_active: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: true,
-      }
+      },
     },
     {
       sequelize,
