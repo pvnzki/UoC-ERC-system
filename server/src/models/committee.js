@@ -25,13 +25,15 @@ module.exports = (sequelize, DataTypes) => {
         autoIncrement: true,
         primaryKey: true,
       },
-      name: {
+      committee_name: {
         type: DataTypes.STRING,
         allowNull: false,
+        field: "committee_name",
       },
-      type: {
+      committee_type: {
         type: DataTypes.ENUM("ERC", "CTSC", "ARWC"),
         allowNull: false,
+        field: "committee_type",
       },
       description: {
         type: DataTypes.TEXT,

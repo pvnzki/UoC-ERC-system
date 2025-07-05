@@ -104,10 +104,10 @@ const adminController = {
         if ((role === "COMMITTEE_MEMBER" || role === "STAFF") && committeeId) {
           await db.sequelize.query(`
           INSERT INTO "CommitteeMembers" (
-            user_id, committee_id, role, is_active, created_at, updated_at
+            user_id, committee_id, role, created_at, updated_at
           ) VALUES (
             ${userId}, ${committeeId}, '${role === "COMMITTEE_MEMBER" ? "MEMBER" : "STAFF"}', 
-            true, NOW(), NOW()
+            NOW(), NOW()
           )
         `);
         } else if (
@@ -307,29 +307,106 @@ const adminController = {
   // 3.1.4 List all reviewers under each committee
   async listCommitteeReviewers(req, res) {
     try {
-      const committees = await Committee.findAll({
-        include: [
-          {
-            model: CommitteeMember,
-            as: "members",
-            include: [
-              {
-                model: User,
-                as: "user",
-                attributes: [
-                  "user_id",
-                  "first_name",
-                  "last_name",
-                  "email",
-                  "is_active",
-                ],
-              },
-            ],
+      console.log("=== BACKEND: listCommitteeReviewers called ===");
+
+      // First, let's check if the tables exist and their structure
+      try {
+        const committeesCheck = await db.sequelize.query(
+          'SELECT COUNT(*) as count FROM "Committees"',
+          { type: db.sequelize.QueryTypes.SELECT }
+        );
+        console.log("Committees table check:", committeesCheck);
+
+        const membersCheck = await db.sequelize.query(
+          'SELECT COUNT(*) as count FROM "CommitteeMembers"',
+          { type: db.sequelize.QueryTypes.SELECT }
+        );
+        console.log("CommitteeMembers table check:", membersCheck);
+
+        const usersCheck = await db.sequelize.query(
+          'SELECT COUNT(*) as count FROM "Users"',
+          { type: db.sequelize.QueryTypes.SELECT }
+        );
+        console.log("Users table check:", usersCheck);
+      } catch (tableError) {
+        console.error("Table check error:", tableError);
+        return res
+          .status(500)
+          .json({ error: "Database table error: " + tableError.message });
+      }
+
+      // Get all committees first
+      const committees = await db.sequelize.query(
+        'SELECT committee_id, committee_name, committee_type FROM "Committees"',
+        { type: db.sequelize.QueryTypes.SELECT }
+      );
+      console.log("All committees:", committees);
+
+      // Get all committee members with user details
+      const membersQuery = `
+        SELECT 
+          cm.member_id,
+          cm.committee_id,
+          cm.role as member_role,
+          u.user_id,
+          u.first_name,
+          u.last_name,
+          u.email,
+          u.validity
+        FROM "CommitteeMembers" cm
+        INNER JOIN "Users" u ON cm.user_id = u.user_id
+        ORDER BY cm.committee_id, cm.member_id
+      `;
+
+      const members = await db.sequelize.query(membersQuery, {
+        type: db.sequelize.QueryTypes.SELECT,
+      });
+      console.log("All committee members:", members);
+
+      // Group members by committee
+      const membersByCommittee = {};
+      members.forEach((member) => {
+        if (!membersByCommittee[member.committee_id]) {
+          membersByCommittee[member.committee_id] = [];
+        }
+        membersByCommittee[member.committee_id].push({
+          member_id: member.member_id,
+          role: member.member_role,
+          user: {
+            user_id: member.user_id,
+            first_name: member.first_name,
+            last_name: member.last_name,
+            email: member.email,
+            validity: member.validity,
           },
-        ],
+        });
       });
 
-      return res.status(200).json(committees);
+      // Combine committees with their members
+      const result = committees.map((committee) => ({
+        committee_id: committee.committee_id,
+        committee_name: committee.committee_name,
+        committee_type: committee.committee_type,
+        members: membersByCommittee[committee.committee_id] || [],
+      }));
+
+      console.log(
+        "Final result:",
+        result.map((c) => ({
+          committee_id: c.committee_id,
+          committee_name: c.committee_name,
+          member_count: c.members.length,
+          members: c.members.map((m) => ({
+            member_id: m.member_id,
+            user_id: m.user.user_id,
+            user_name: `${m.user.first_name} ${m.user.last_name}`,
+          })),
+        }))
+      );
+
+      console.log("=== END BACKEND DEBUG ===");
+
+      return res.status(200).json(result);
     } catch (error) {
       console.error("Error listing reviewers:", error);
       return res.status(500).json({ error: "Failed to list reviewers" });
@@ -341,11 +418,35 @@ const adminController = {
     try {
       const { userId, validity, reason } = req.body;
 
+      console.log("updateUserStatus called with:", {
+        userId,
+        validity,
+        reason,
+      });
+
       // Check if user exists
-      const user = await User.findByPk(userId);
+      const userIdInt = parseInt(userId);
+      console.log(
+        "Looking for user with ID:",
+        userIdInt,
+        "Type:",
+        typeof userIdInt
+      );
+
+      const user = await User.findByPk(userIdInt);
       if (!user) {
+        console.log("User not found:", userIdInt);
         return res.status(404).json({ error: "User not found" });
       }
+
+      console.log(
+        "Found user:",
+        user.user_id,
+        user.email,
+        "Current validity:",
+        user.validity
+      );
+      console.log("Updating validity to:", validity);
 
       // Update user validity
       await user.update({ validity });
@@ -652,9 +753,301 @@ const adminController = {
     }
   },
 
+  // Delete committee
+  async deleteCommittee(req, res) {
+    try {
+      const { committeeId } = req.params;
+      console.log("=== BACKEND: deleteCommittee called ===");
+      console.log("Committee ID to delete:", committeeId);
+
+      // Use raw SQL to check committee existence
+      const [committee] = await db.sequelize.query(
+        'SELECT * FROM "Committees" WHERE committee_id = ?',
+        {
+          replacements: [committeeId],
+          type: db.sequelize.QueryTypes.SELECT,
+        }
+      );
+
+      if (!committee) {
+        console.log("Committee not found:", committeeId);
+        return res.status(404).json({ error: "Committee not found" });
+      }
+
+      console.log("Found committee:", committee);
+
+      // Start a transaction
+      const transaction = await db.sequelize.transaction();
+
+      try {
+        // Check if committee has members
+        const [members] = await db.sequelize.query(
+          'SELECT COUNT(*) as member_count FROM "CommitteeMembers" WHERE committee_id = ?',
+          {
+            replacements: [committeeId],
+            type: db.sequelize.QueryTypes.SELECT,
+          }
+        );
+
+        const memberCount = members.member_count;
+        console.log("Committee has", memberCount, "members");
+
+        // Check if committee has assigned applications
+        const [applications] = await db.sequelize.query(
+          'SELECT COUNT(*) as app_count FROM "Applications" WHERE assigned_committee_id = ?',
+          {
+            replacements: [committeeId],
+            type: db.sequelize.QueryTypes.SELECT,
+          }
+        );
+
+        const appCount = applications.app_count;
+        console.log("Committee has", appCount, "assigned applications");
+
+        // Check if committee has meetings
+        const [meetings] = await db.sequelize.query(
+          'SELECT COUNT(*) as meeting_count FROM "CommitteeMeetings" WHERE committee_id = ?',
+          {
+            replacements: [committeeId],
+            type: db.sequelize.QueryTypes.SELECT,
+          }
+        );
+
+        const meetingCount = meetings.meeting_count;
+        console.log("Committee has", meetingCount, "meetings");
+
+        const summary = {
+          membersRemoved: memberCount,
+          applicationsUnassigned: appCount,
+          meetingsDeleted: meetingCount,
+        };
+
+        // Remove committee members
+        if (memberCount > 0) {
+          await db.sequelize.query(
+            'DELETE FROM "CommitteeMembers" WHERE committee_id = ?',
+            {
+              replacements: [committeeId],
+              type: db.sequelize.QueryTypes.DELETE,
+              transaction,
+            }
+          );
+          console.log("Removed", memberCount, "committee members");
+        }
+
+        // Unassign applications
+        if (appCount > 0) {
+          await db.sequelize.query(
+            'UPDATE "Applications" SET assigned_committee_id = NULL WHERE assigned_committee_id = ?',
+            {
+              replacements: [committeeId],
+              type: db.sequelize.QueryTypes.UPDATE,
+              transaction,
+            }
+          );
+          console.log("Unassigned", appCount, "applications");
+        }
+
+        // Delete meetings
+        if (meetingCount > 0) {
+          await db.sequelize.query(
+            'DELETE FROM "CommitteeMeetings" WHERE committee_id = ?',
+            {
+              replacements: [committeeId],
+              type: db.sequelize.QueryTypes.DELETE,
+              transaction,
+            }
+          );
+          console.log("Deleted", meetingCount, "meetings");
+        }
+
+        // Delete the committee
+        await db.sequelize.query(
+          'DELETE FROM "Committees" WHERE committee_id = ?',
+          {
+            replacements: [committeeId],
+            type: db.sequelize.QueryTypes.DELETE,
+            transaction,
+          }
+        );
+        console.log("Deleted committee:", committeeId);
+
+        // Commit the transaction
+        await transaction.commit();
+        console.log("Transaction committed successfully");
+
+        console.log("=== END BACKEND DEBUG ===");
+
+        return res.status(200).json({
+          message: "Committee deleted successfully",
+          committeeId,
+          summary,
+        });
+      } catch (error) {
+        // Rollback the transaction on error
+        await transaction.rollback();
+        console.error("Transaction rolled back due to error:", error);
+        throw error;
+      }
+    } catch (error) {
+      console.error("Error deleting committee:", error);
+      return res.status(500).json({ error: "Failed to delete committee" });
+    }
+  },
+
+  // Simple test function
+  async testDatabase(req, res) {
+    try {
+      console.log("=== Testing database connection ===");
+
+      // Test 1: Basic connection
+      await db.sequelize.authenticate();
+      console.log("Database connection: OK");
+
+      // Test 2: Simple query
+      const [result] = await db.sequelize.query("SELECT 1 as test", {
+        type: db.sequelize.QueryTypes.SELECT,
+      });
+      console.log("Simple query test:", result);
+
+      // Test 3: Committees table
+      const committees = await db.sequelize.query(
+        'SELECT committee_id, committee_name FROM "Committees" LIMIT 3',
+        { type: db.sequelize.QueryTypes.SELECT }
+      );
+      console.log("Committees test:", committees);
+
+      return res.status(200).json({
+        message: "Database connection successful",
+        committees: committees,
+      });
+    } catch (error) {
+      console.error("Database test error:", error);
+      return res.status(500).json({ error: error.message });
+    }
+  },
+
+  // Debug committees endpoint
+  async debugCommittees(req, res) {
+    try {
+      console.log("=== BACKEND: debugCommittees called ===");
+
+      const debugInfo = {
+        timestamp: new Date().toISOString(),
+        database: {},
+        tables: {},
+        queries: {},
+      };
+
+      // Test database connection
+      try {
+        await db.sequelize.authenticate();
+        debugInfo.database.connection = "OK";
+        console.log("Database connection: OK");
+      } catch (dbError) {
+        debugInfo.database.connection = "ERROR: " + dbError.message;
+        console.error("Database connection error:", dbError);
+      }
+
+      // Check if tables exist
+      const tables = ["Committees", "CommitteeMembers", "Users"];
+      for (const table of tables) {
+        try {
+          const [result] = await db.sequelize.query(
+            `SELECT COUNT(*) as count FROM "${table}"`,
+            { type: db.sequelize.QueryTypes.SELECT }
+          );
+          debugInfo.tables[table] = {
+            exists: true,
+            count: result.count,
+          };
+          console.log(`Table ${table}: exists, count = ${result.count}`);
+        } catch (tableError) {
+          debugInfo.tables[table] = {
+            exists: false,
+            error: tableError.message,
+          };
+          console.error(`Table ${table} error:`, tableError.message);
+        }
+      }
+
+      // Test simple queries
+      try {
+        const [committees] = await db.sequelize.query(
+          'SELECT committee_id, committee_name FROM "Committees" LIMIT 5',
+          { type: db.sequelize.QueryTypes.SELECT }
+        );
+        debugInfo.queries.committees = committees;
+        console.log("Sample committees:", committees);
+      } catch (queryError) {
+        debugInfo.queries.committees = { error: queryError.message };
+        console.error("Committees query error:", queryError);
+      }
+
+      try {
+        const [members] = await db.sequelize.query(
+          'SELECT member_id, committee_id, user_id FROM "CommitteeMembers" LIMIT 5',
+          { type: db.sequelize.QueryTypes.SELECT }
+        );
+        debugInfo.queries.members = members;
+        console.log("Sample members:", members);
+      } catch (queryError) {
+        debugInfo.queries.members = { error: queryError.message };
+        console.error("Members query error:", queryError);
+      }
+
+      console.log("=== END BACKEND DEBUG ===");
+
+      return res.status(200).json(debugInfo);
+    } catch (error) {
+      console.error("Error in debugCommittees:", error);
+      return res.status(500).json({ error: "Debug error: " + error.message });
+    }
+  },
+
+  // Debug committee members endpoint
+  async debugCommitteeMembers(req, res) {
+    try {
+      console.log("=== BACKEND: debugCommitteeMembers called ===");
+
+      // Get all committee members
+      const members = await db.sequelize.query(
+        `SELECT 
+          cm.member_id,
+          cm.committee_id,
+          cm.role,
+          cm.user_id,
+          c.committee_name,
+          u.first_name,
+          u.last_name,
+          u.email,
+          u.validity
+        FROM "CommitteeMembers" cm
+        LEFT JOIN "Committees" c ON cm.committee_id = c.committee_id
+        LEFT JOIN "Users" u ON cm.user_id = u.user_id
+        ORDER BY cm.committee_id, cm.member_id`,
+        { type: db.sequelize.QueryTypes.SELECT }
+      );
+
+      console.log("All committee members in database:", members);
+
+      return res.status(200).json({
+        message: "Committee members debug info",
+        members: members,
+        total_members: members.length,
+      });
+    } catch (error) {
+      console.error("Error in debugCommitteeMembers:", error);
+      return res.status(500).json({ error: "Debug error: " + error.message });
+    }
+  },
+
   async addMembersToCommittee(req, res) {
     try {
       const { committeeId, members } = req.body;
+      console.log("=== BACKEND: addMembersToCommittee called ===");
+      console.log("Committee ID:", committeeId);
+      console.log("Members to add:", members);
 
       // Use raw SQL to check committee existence
       const [committee] = await db.sequelize.query(
@@ -665,8 +1058,10 @@ const adminController = {
         }
       );
       if (!committee) {
+        console.log("Committee not found:", committeeId);
         return res.status(404).json({ error: "Committee not found" });
       }
+      console.log("Found committee:", committee);
 
       const errors = [];
       const committeeMembers = [];
@@ -694,13 +1089,31 @@ const adminController = {
           user_id: member.userId,
           committee_id: committeeId,
           role: member.role || "MEMBER",
-          is_active: true,
         });
         successfulAdditions.push({ user, role: member.role || "MEMBER" });
       }
 
       if (committeeMembers.length > 0) {
+        console.log("Creating committee members:", committeeMembers);
         await CommitteeMember.bulkCreate(committeeMembers);
+        console.log(
+          "Successfully created",
+          committeeMembers.length,
+          "committee members"
+        );
+
+        // Verify the members were actually added
+        const [verificationResults] = await db.sequelize.query(
+          'SELECT * FROM "CommitteeMembers" WHERE committee_id = ?',
+          {
+            replacements: [committeeId],
+            type: db.sequelize.QueryTypes.SELECT,
+          }
+        );
+        console.log(
+          "Verification - All members in committee:",
+          verificationResults
+        );
 
         // Send notification emails to successfully added members
         for (const { user, role } of successfulAdditions) {
@@ -740,6 +1153,7 @@ const adminController = {
         });
       }
 
+      console.log("=== END BACKEND DEBUG ===");
       return res.status(200).json({
         message: "Members added to committee successfully",
         added: committeeMembers.map((m) => m.user_id),
