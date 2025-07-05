@@ -112,7 +112,10 @@ const adminReviewController = {
             application.decision_date = new Date();
 
             // Generate approval letter
-            const approvalLetter = generateApprovalLetter(application, true);
+            const approvalLetter = await generateApprovalLetter(
+              application,
+              true
+            );
 
             // Send email with approval letter
             await sendMail({
@@ -138,8 +141,7 @@ const adminReviewController = {
                 return res.status(404).json({ error: "Committee not found" });
               }
 
-              // Note: assigned_committee_id column doesn't exist in the database
-              // application.assigned_committee_id = committeeId;
+              application.assigned_committee_id = committeeId;
 
               if (committee.type === "ERC") {
                 application.status = "ERC_REVIEW";
@@ -250,7 +252,7 @@ const adminReviewController = {
 
       // Add approval letter if requested
       if (attachApprovalLetter) {
-        const approvalLetter = generateApprovalLetter(application);
+        const approvalLetter = await generateApprovalLetter(application);
         emailOptions.attachments = [
           {
             filename: `approval_letter_${applicationId}.pdf`,

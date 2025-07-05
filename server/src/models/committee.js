@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "committee_id",
         as: "members",
       });
-      
+
       // Committee has many Applications
       Committee.hasMany(models.Application, {
         foreignKey: "assigned_committee_id",
@@ -30,13 +30,13 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       type: {
-        type: DataTypes.ENUM('ERC', 'CTSC', 'ARWC'),
+        type: DataTypes.ENUM("ERC", "CTSC", "ARWC"),
         allowNull: false,
       },
       description: {
         type: DataTypes.TEXT,
         allowNull: true,
-      }
+      },
     },
     {
       sequelize,
