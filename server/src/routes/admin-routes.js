@@ -25,30 +25,21 @@ router.delete(
 ); //remove members from a committee (Not from the system)
 
 router.get("/table-structure/:tableName", adminController.getTableStructure); //get the structure of a table
-router.post("/update-schema", adminController.updateDatabaseSchema);
+// router.post("/update-schema", adminController.updateDatabaseSchema);
 
 // Preliminary Review Routes (3.2.x)
-router.get("/check-applications-table", adminController.checkApplicationsTable);
-router.get("/check-applicant-table", adminController.checkApplicantTable);
-router.get("/check-models", adminController.checkModels);
-router.get("/applications", adminReviewController.getApplications);
-router.put(
-  "/applications/:applicationId/review",
-  adminReviewController.reviewApplication
-);
-router.post(
-  "/applications/:applicationId/email",
-  adminReviewController.sendApplicantEmail
-);
+router.get("/check-applications-table", adminController.checkApplicationsTable); //check the structure of the applications table
+router.get("/check-applicant-table", adminController.checkApplicantTable); //check the structure of the applicants table
+router.get("/check-models", adminController.checkModels); //checking the associations between the tables
+router.get("/applications", adminReviewController.getApplications); //Done
+router.put("/applications/:applicationId/review",adminReviewController.reviewApplication); //can successfully review applications (can set the statuses : "RETURN_FOR_RESUBMISSION", "EXPEDITED_APPROVAL", "ASSIGN_COMMITTEE")
+router.post("/applications/:applicationId/email",adminReviewController.sendApplicantApprovalEmail); //Approval email only sent when application is approved
 
 // Committee Meeting Routes (3.3.x)
 router.post("/meetings", meetingController.createMeeting);
 router.put("/meetings/:meetingId/ratify", meetingController.ratifyDecisions);
 router.get("/meetings/summary", meetingController.generateMeetingSummary);
-router.get(
-  "/applications/:applicationId/letter",
-  meetingController.generateLetter
-);
+router.get("/applications/:applicationId/letter", meetingController.generateLetter);
 
 // Committee Interaction Routes (3.4.x)
 router.put(
