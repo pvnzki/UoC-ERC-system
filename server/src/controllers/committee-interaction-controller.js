@@ -20,22 +20,29 @@ const committeeInteractionController = {
         return res.status(404).json({ error: "Application not found" });
       }
 
-      const committee = await Committee.findByPk(committeeId);
+      // Use raw SQL to get committee data with actual column names
+      const [committee] = await sequelize.query(
+        'SELECT committee_id, committee_name, committee_type FROM "Committees" WHERE committee_id = ?',
+        {
+          replacements: [committeeId],
+          type: sequelize.QueryTypes.SELECT,
+        }
+      );
+
       if (!committee) {
         return res.status(404).json({ error: "Committee not found" });
       }
 
       // Update application with committee assignment
-      // Note: assigned_committee_id column doesn't exist in the database
-      // application.assigned_committee_id = committeeId;
+      application.assigned_committee_id = committeeId;
       application.admin_comments = comments;
 
       // Set status based on committee type
-      if (committee.type === "CTSC") {
+      if (committee.committee_type === "CTSC") {
         application.status = "CTSC_REVIEW";
-      } else if (committee.type === "ARWC") {
+      } else if (committee.committee_type === "ARWC") {
         application.status = "ARWC_REVIEW";
-      } else if (committee.type === "ERC") {
+      } else if (committee.committee_type === "ERC") {
         application.status = "ERC_REVIEW";
       }
 
@@ -156,7 +163,15 @@ const committeeInteractionController = {
       const { committeeId } = req.params;
       const { subject, message, sendToAll } = req.body;
 
-      const committee = await Committee.findByPk(committeeId);
+      // Use raw SQL to get committee data with actual column names
+      const [committee] = await sequelize.query(
+        'SELECT committee_id, committee_name, committee_type FROM "Committees" WHERE committee_id = ?',
+        {
+          replacements: [committeeId],
+          type: sequelize.QueryTypes.SELECT,
+        }
+      );
+
       if (!committee) {
         return res.status(404).json({ error: "Committee not found" });
       }
