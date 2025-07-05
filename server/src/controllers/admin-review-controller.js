@@ -213,7 +213,7 @@ const adminReviewController = {
   },
 
   // 3.2.7, 3.2.8 Generate approval letters and send emails
-  async sendApplicantEmail(req, res) {
+  async sendApplicantApprovalEmail(req, res) {
     try {
       const { applicationId } = req.params;
       const { subject, message, attachApprovalLetter } = req.body;
@@ -230,6 +230,16 @@ const adminReviewController = {
 
       if (!application) {
         return res.status(404).json({ error: "Application not found" });
+      }
+
+      // Only allow sending approval email if status is APPROVED or EXPEDITED_APPROVED
+      if (
+        application.status !== "APPROVED" &&
+        application.status !== "EXPEDITED_APPROVED"
+      ) {
+        return res.status(400).json({
+          error: "Cannot send approval email unless application is approved.",
+        });
       }
 
       const emailOptions = {
