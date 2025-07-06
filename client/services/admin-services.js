@@ -360,6 +360,15 @@ export const adminServices = {
     return response.data;
   },
 
+  // Get analytics data
+  getAnalyticsData: async (timeRange = "30d") => {
+    const instance = createAuthInstance();
+    const response = await instance.get(
+      `/admin/analytics?timeRange=${timeRange}`
+    );
+    return response.data;
+  },
+
   // Test dashboard API
   testDashboard: async () => {
     const instance = createAuthInstance();

@@ -1,17 +1,22 @@
+import React, { useState } from "react";
 import { Routes, Route } from "react-router-dom";
-import { useState } from "react";
 import { useTheme } from "../context/theme/ThemeContext";
-import Home from "../pages/TechnicalAdmin/Home.jsx";
-import Header from "../components/TechnicalAdmin/genaral/Header.jsx";
-import Sidebar from "../components/TechnicalAdmin/genaral/SideBar.jsx";
-import ApplicationDetails from "../components/TechnicalAdmin/genaral/ApplicationDetails.jsx";
-import ApprovedApplications from "../pages/TechnicalAdmin/ApprovedApplications.jsx";
-import ReturendApplications from "../pages/TechnicalAdmin/ReturnApplication.jsx";
-import Eval from "../pages/TechnicalAdmin/Evaluated.jsx";
+import Header from "../components/TechnicalAdmin/genaral/Header";
+import Sidebar from "../components/TechnicalAdmin/genaral/SideBar";
+import DashboardOverview from "../components/TechnicalAdmin/Dashboard/DashboardOverview";
+import ApplicationReview from "../components/TechnicalAdmin/ApplicationReview/ApplicationReview";
+import ApplicationDetails from "../components/TechnicalAdmin/ApplicationReview/ApplicationDetails";
+import ApprovedApplications from "../pages/TechnicalAdmin/ApprovedApplications";
+import ReturendApplications from "../pages/TechnicalAdmin/ReturnApplication";
+import Home from "../pages/TechnicalAdmin/Home";
+import CommitteeManagement from "../components/TechnicalAdmin/CommitteeManagement/CommitteeManagement";
+import UserManagement from "../components/TechnicalAdmin/UserManagement/UserManagement";
+import MeetingManagement from "../components/TechnicalAdmin/MeetingManagement/MeetingManagement";
+import Analytics from "../components/TechnicalAdmin/Analytics/Analytics";
 
 const ERCTechnicalCommitteeRoutes = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const { isDarkMode } = useTheme();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
     <div
@@ -19,26 +24,30 @@ const ERCTechnicalCommitteeRoutes = () => {
         isDarkMode ? "bg-gray-900" : "bg-gray-50"
       }`}
     >
-      {/* Header */}
       <div className="fixed top-0 left-0 w-full z-50">
         <Header />
       </div>
 
-      {/* Sidebar & Main Content */}
       <div className="flex flex-1 pt-20 overflow-hidden">
-        {/* Sidebar */}
         <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
         {/* Main Content */}
         <div
-          className={`flex-grow transition-all duration-300 p-6 overflow-y-auto ${
+          className={`flex-grow transition-all duration-700 ease-out p-6 overflow-y-auto ${
             isDarkMode ? "bg-gray-800" : "bg-gray-100"
           }`}
+          style={{
+            marginLeft: isCollapsed ? "0" : "0",
+            transform: isCollapsed ? "translateX(0)" : "translateX(0)",
+          }}
         >
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/:id" element={<ApplicationDetails />} />
-            <Route path="/eval/:id" element={<Eval />} />
+            {/* Dashboard Overview - Main admin page */}
+            <Route path="/" element={<DashboardOverview />} />
+
+            {/* Applications */}
+            <Route path="/applications" element={<ApplicationReview />} />
+            <Route path="/applications/:id" element={<ApplicationDetails />} />
             <Route
               path="/approved-applications"
               element={<ApprovedApplications />}
@@ -47,9 +56,22 @@ const ERCTechnicalCommitteeRoutes = () => {
               path="/returned-applications"
               element={<ReturendApplications />}
             />
-            <Route path="/evaluated" element={<Eval />} />
 
-            {/* Add other routes here */}
+            {/* Legacy routes for backward compatibility */}
+            <Route path="/home" element={<Home />} />
+            <Route path="/:id" element={<ApplicationDetails />} />
+
+            {/* Committee Management */}
+            <Route path="/committees" element={<CommitteeManagement />} />
+
+            {/* User Management */}
+            <Route path="/users" element={<UserManagement />} />
+
+            {/* Meeting Management */}
+            <Route path="/meetings" element={<MeetingManagement />} />
+
+            {/* Analytics */}
+            <Route path="/analytics" element={<Analytics />} />
           </Routes>
         </div>
       </div>

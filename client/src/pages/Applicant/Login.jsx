@@ -25,7 +25,7 @@ function Login() {
       setTimeout(() => {
         // Check for admin role (case-insensitive)
         if (user.role === "ADMIN" || user.role === "admin") {
-          navigate("/admin");
+          navigate("/Technical-Admin");
         } else {
           navigate("/");
         }

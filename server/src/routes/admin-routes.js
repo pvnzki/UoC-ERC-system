@@ -82,4 +82,7 @@ router.get("/dashboard/stats", adminController.getDashboardStats); //get dashboa
 router.get("/dashboard/activities", adminController.getRecentActivities); //get recent activities
 router.get("/dashboard/test", adminController.testDashboard); //test dashboard functionality
 
+//get analytics data
+router.get("/analytics", adminController.getAnalyticsData);
+
 module.exports = router;
