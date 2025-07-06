@@ -19,15 +19,12 @@ function Login() {
     console.log("Email:", email);
     console.log("Password:", password);
 
-    const isAuthenticated = await login(email, password);
-    if (isAuthenticated) {
+    const user = await login(email, password);
+    if (user) {
       toast.success("Login successful");
       setTimeout(() => {
         // Check for admin role (case-insensitive)
-        if (
-          isAuthenticated.data.role === "ADMIN" ||
-          isAuthenticated.data.role === "admin"
-        ) {
+        if (user.role === "ADMIN" || user.role === "admin") {
           navigate("/admin");
         } else {
           navigate("/");

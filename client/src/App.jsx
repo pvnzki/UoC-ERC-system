@@ -6,42 +6,78 @@ import ERCTechnicalCommitteeRoutes from "./routes/ERCTechnicalCommitteeRoutes";
 import OfficeStaffRoutes from "./routes/OfficeStaffRoutes";
 import { AuthContextProvider } from "../context/auth/AuthContext";
 import { SessionContextProvider } from "../context/session/SessionContext";
+import { ThemeProvider } from "./context/theme/ThemeContext";
 import SessionExpiredModalWrapper from "./components/common/SessionExpiredModalWrapper";
+import ProtectedRoute from "./components/common/ProtectedRoute";
 import AdminDashboard from "./pages/TechnicalAdmin/Dashboard";
 
 const App = () => {
   return (
-    <AuthContextProvider>
-      <Router>
-        <SessionContextProvider>
-          <Routes>
-            {/* Applicant Routes */}
-            <Route path="/*" element={<ApplicantRoutes />} />
+    <ThemeProvider>
+      <AuthContextProvider>
+        <Router>
+          <SessionContextProvider>
+            <Routes>
+              {/* Applicant Routes */}
+              <Route path="/*" element={<ApplicantRoutes />} />
 
-            {/* Technical Admin Routes */}
-            <Route path="/admin/*" element={<AdminDashboard />} />
+              {/* Technical Admin Routes */}
+              <Route
+                path="/admin/*"
+                element={
+                  <ProtectedRoute requiredRole="ADMIN">
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* CTSC/ARWS Chair Routes */}
-            <Route path="/chair/*" element={<CTSCorARWSChairRoutes />} />
+              {/* CTSC/ARWS Chair Routes */}
+              <Route
+                path="/chair/*"
+                element={
+                  <ProtectedRoute requiredRole="CHAIR">
+                    <CTSCorARWSChairRoutes />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* ERC main committee/ CTSC/ARWS members Routes */}
-            <Route path="/ercmain/*" element={<ERCmainRoutes />} />
+              {/* ERC main committee/ CTSC/ARWS members Routes */}
+              <Route
+                path="/ercmain/*"
+                element={
+                  <ProtectedRoute requiredRole="COMMITTEE_MEMBER">
+                    <ERCmainRoutes />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* ERC Technical Committee Member Routes */}
-            <Route
-              path="/Technical-Admin/*"
-              element={<ERCTechnicalCommitteeRoutes />}
-            />
+              {/* ERC Technical Committee Member Routes */}
+              <Route
+                path="/Technical-Admin/*"
+                element={
+                  <ProtectedRoute requiredRole="ADMIN">
+                    <ERCTechnicalCommitteeRoutes />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Office Staff Routes */}
-            <Route path="/officestaff/*" element={<OfficeStaffRoutes />} />
-          </Routes>
+              {/* Office Staff Routes */}
+              <Route
+                path="/officestaff/*"
+                element={
+                  <ProtectedRoute requiredRole="OFFICE_STAFF">
+                    <OfficeStaffRoutes />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
 
-          {/* Session Expired Modal */}
-          <SessionExpiredModalWrapper />
-        </SessionContextProvider>
-      </Router>
-    </AuthContextProvider>
+            {/* Session Expired Modal */}
+            <SessionExpiredModalWrapper />
+          </SessionContextProvider>
+        </Router>
+      </AuthContextProvider>
+    </ThemeProvider>
   );
 };
 

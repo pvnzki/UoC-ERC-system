@@ -50,6 +50,7 @@ router.post(
 ); //Approval email only sent when application is approved
 
 // Committee Meeting Routes (3.3.x)
+router.get("/meetings", meetingController.getMeetings);
 router.post("/meetings", meetingController.createMeeting); //meetings are creating wrt the committee_id
 router.put("/meetings/:meetingId/ratify", meetingController.ratifyDecisions);
 router.get("/meetings/summary", meetingController.generateMeetingSummary); //meeting summary generated with meeting id, committee id , decisioins made and etc

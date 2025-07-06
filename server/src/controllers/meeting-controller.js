@@ -15,6 +15,34 @@ const {
 } = require("../utils/document-generator");
 
 const meetingController = {
+  // Get all meetings
+  async getMeetings(req, res) {
+    try {
+      const meetings = await sequelize.query(
+        `SELECT 
+          cm.meeting_id,
+          cm.committee_id,
+          cm.meeting_date,
+          cm.agenda,
+          cm.minutes,
+          cm.status,
+          c.committee_name,
+          c.committee_type
+        FROM "CommitteeMeetings" cm
+        LEFT JOIN "Committees" c ON cm.committee_id = c.committee_id
+        ORDER BY cm.meeting_date DESC`,
+        {
+          type: sequelize.QueryTypes.SELECT,
+        }
+      );
+
+      return res.status(200).json(meetings);
+    } catch (error) {
+      console.error("Error fetching meetings:", error);
+      return res.status(500).json({ error: "Failed to fetch meetings" });
+    }
+  },
+
   // Create a new committee meeting
   async createMeeting(req, res) {
     try {

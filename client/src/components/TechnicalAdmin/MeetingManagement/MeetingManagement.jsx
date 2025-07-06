@@ -1,22 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { adminServices } from "../../../../services/admin-services";
+import MeetingDetailsModal from "./MeetingDetailsModal";
+import MeetingSummaryModal from "./MeetingSummaryModal";
+import LetterModal from "./LetterModal";
 
 const MeetingManagement = () => {
   const [meetings, setMeetings] = useState([]);
   const [committees, setCommittees] = useState([]);
+  const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState(null);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [selectedSummary, setSelectedSummary] = useState(null);
+  const [showLetterModal, setShowLetterModal] = useState(false);
+  const [selectedLetter, setSelectedLetter] = useState(null);
+  const [selectedApplicationId, setSelectedApplicationId] = useState(null);
 
   const [newMeeting, setNewMeeting] = useState({
     committee_id: "",
     meeting_date: "",
-    meeting_time: "",
-    location: "",
     agenda: "",
-    attendees: [],
+    applicationIds: [],
   });
 
   const fetchCommittees = async () => {
@@ -25,6 +32,23 @@ const MeetingManagement = () => {
       setCommittees(committeesData);
     } catch (err) {
       console.error("Failed to load committees:", err);
+    }
+  };
+
+  const fetchApplications = async () => {
+    try {
+      const response = await adminServices.getApplications();
+      console.log("Applications response:", response);
+
+      // The backend returns { total, totalPages, currentPage, applications }
+      // We need to extract the applications array
+      const applicationsArray = response.applications || [];
+      console.log("Applications array:", applicationsArray);
+
+      setApplications(applicationsArray);
+    } catch (err) {
+      console.error("Failed to load applications:", err);
+      setApplications([]); // Set empty array on error
     }
   };
 
@@ -44,8 +68,18 @@ const MeetingManagement = () => {
 
   useEffect(() => {
     fetchCommittees();
+    fetchApplications();
     fetchMeetings();
   }, []);
+
+  const resetForm = () => {
+    setNewMeeting({
+      committee_id: "",
+      meeting_date: "",
+      agenda: "",
+      applicationIds: [],
+    });
+  };
 
   const handleCreateMeeting = async (meetingData) => {
     try {
@@ -53,6 +87,7 @@ const MeetingManagement = () => {
       await adminServices.createMeeting(meetingData);
       fetchMeetings();
       setShowCreateForm(false);
+      resetForm();
       toast.success("Meeting created successfully");
     } catch (err) {
       setError("Failed to create meeting");
@@ -81,9 +116,14 @@ const MeetingManagement = () => {
     try {
       setLoading(true);
       const summary = await adminServices.generateMeetingSummary({ meetingId });
-      // Handle the summary data (download or display)
+      if (summary && summary.length > 0) {
+        const meetingSummary = summary.find((s) => s.meetingId === meetingId);
+        if (meetingSummary) {
+          setSelectedSummary(meetingSummary);
+          setShowSummaryModal(true);
+        }
+      }
       toast.success("Meeting summary generated successfully");
-      return summary;
     } catch (err) {
       setError("Failed to generate meeting summary");
       console.error(err);
@@ -97,9 +137,10 @@ const MeetingManagement = () => {
     try {
       setLoading(true);
       const letter = await adminServices.generateLetter(applicationId);
-      // Handle the letter data (download or display)
+      setSelectedLetter(letter);
+      setSelectedApplicationId(applicationId);
+      setShowLetterModal(true);
       toast.success("Letter generated successfully");
-      return letter;
     } catch (err) {
       setError("Failed to generate letter");
       console.error(err);
@@ -161,7 +202,7 @@ const MeetingManagement = () => {
                       key={committee.committee_id}
                       value={committee.committee_id}
                     >
-                      {committee.name}
+                      {committee.committee_name}
                     </option>
                   ))}
                 </select>
@@ -184,40 +225,6 @@ const MeetingManagement = () => {
                   required
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Meeting Time
-                </label>
-                <input
-                  type="time"
-                  value={newMeeting.meeting_time}
-                  onChange={(e) =>
-                    setNewMeeting({
-                      ...newMeeting,
-                      meeting_time: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  value={newMeeting.location}
-                  onChange={(e) =>
-                    setNewMeeting({ ...newMeeting, location: e.target.value })
-                  }
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Meeting location"
-                  required
-                />
-              </div>
             </div>
 
             <div className="mt-4">
@@ -234,6 +241,38 @@ const MeetingManagement = () => {
                 placeholder="Meeting agenda"
                 required
               />
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Applications to Review (Optional)
+              </label>
+              <select
+                multiple
+                value={newMeeting.applicationIds}
+                onChange={(e) => {
+                  const selectedOptions = Array.from(
+                    e.target.selectedOptions,
+                    (option) => parseInt(option.value)
+                  );
+                  setNewMeeting({
+                    ...newMeeting,
+                    applicationIds: selectedOptions,
+                  });
+                }}
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                size="4"
+              >
+                {Array.isArray(applications) &&
+                  applications.map((app) => (
+                    <option key={app.application_id} value={app.application_id}>
+                      #{app.application_id} - {app.research_type} ({app.status})
+                    </option>
+                  ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Hold Ctrl (or Cmd on Mac) to select multiple applications
+              </p>
             </div>
 
             <div className="mt-6 flex justify-end space-x-3">
@@ -280,10 +319,28 @@ const MeetingManagement = () => {
                         {meeting.committee_name}
                       </h3>
                       <p className="text-gray-600">
-                        {new Date(meeting.meeting_date).toLocaleDateString()} at{" "}
-                        {meeting.meeting_time}
+                        {new Date(meeting.meeting_date).toLocaleDateString()}
                       </p>
-                      <p className="text-gray-600">{meeting.location}</p>
+                      <p className="text-gray-500 text-sm">
+                        Status:{" "}
+                        <span
+                          className={`font-medium ${
+                            meeting.status === "COMPLETED"
+                              ? "text-green-600"
+                              : meeting.status === "IN_PROGRESS"
+                              ? "text-yellow-600"
+                              : "text-blue-600"
+                          }`}
+                        >
+                          {meeting.status}
+                        </span>
+                      </p>
+                      {meeting.agenda && (
+                        <p className="text-gray-600 text-sm mt-1">
+                          Agenda: {meeting.agenda.substring(0, 100)}
+                          {meeting.agenda.length > 100 ? "..." : ""}
+                        </p>
+                      )}
                     </div>
                     <div className="flex space-x-2">
                       <button
@@ -308,6 +365,29 @@ const MeetingManagement = () => {
           )}
         </div>
       )}
+
+      {/* Meeting Details Modal */}
+      <MeetingDetailsModal
+        isOpen={!!selectedMeeting}
+        onClose={() => setSelectedMeeting(null)}
+        meeting={selectedMeeting}
+        onUpdate={fetchMeetings}
+      />
+
+      {/* Meeting Summary Modal */}
+      <MeetingSummaryModal
+        isOpen={showSummaryModal}
+        onClose={() => setShowSummaryModal(false)}
+        summary={selectedSummary}
+      />
+
+      {/* Letter Modal */}
+      <LetterModal
+        isOpen={showLetterModal}
+        onClose={() => setShowLetterModal(false)}
+        letter={selectedLetter}
+        applicationId={selectedApplicationId}
+      />
     </div>
   );
 };
