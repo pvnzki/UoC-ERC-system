@@ -2,9 +2,54 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// Global session expiration handler
+let sessionExpirationHandler = null;
+
+// Function to set the session expiration handler
+export const setAuthSessionExpirationHandler = (handler) => {
+  sessionExpirationHandler = handler;
+};
+
+// Create axios instance with interceptors
+const createAuthAxiosInstance = () => {
+  const instance = axios.create({
+    baseURL: API_URL,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  // Add response interceptor to handle session expiration
+  instance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      // Check if it's a session expiration error
+      const isSessionExpired = 
+        error?.response?.status === 401 ||
+        error?.response?.status === 403 ||
+        error?.response?.data?.error?.includes("token") ||
+        error?.response?.data?.error?.includes("expired") ||
+        error?.response?.data?.error?.includes("unauthorized") ||
+        error?.response?.data?.message?.includes("token") ||
+        error?.response?.data?.message?.includes("expired") ||
+        error?.response?.data?.message?.includes("unauthorized");
+
+      if (isSessionExpired && sessionExpirationHandler) {
+        console.log("Session expired detected in auth API call");
+        sessionExpirationHandler(error);
+      }
+
+      return Promise.reject(error);
+    }
+  );
+
+  return instance;
+};
+
 export const userLogin = async (email, password) => {
   try {
-    const response = await axios.post(`${API_URL}/auth/login`, {
+    const instance = createAuthAxiosInstance();
+    const response = await instance.post("/auth/login", {
       email,
       password,
     });
@@ -29,7 +74,8 @@ export const userLogin = async (email, password) => {
 
 export const validateUser = async (token) => {
   try {
-    const response = await axios.get(`${API_URL}/auth/validate`, {
+    const instance = createAuthAxiosInstance();
+    const response = await instance.get("/auth/validate", {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (response.status === 200) {
@@ -51,7 +97,8 @@ export const validateUser = async (token) => {
 
 export const userRegister = async (userData) => {
   try {
-    const response = await axios.post(`${API_URL}/auth/register`, userData);
+    const instance = createAuthAxiosInstance();
+    const response = await instance.post("/auth/register", userData);
     if (response.status === 200 || response.status === 201) {
       return { success: true, user: response.data };
     } else {

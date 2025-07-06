@@ -3,19 +3,15 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../../assets/Applicant/logo-menu.png";
 import defaultProfile from "../../../assets/default-profile.png";
+import { useAuth } from "../../../../context/auth/AuthContext";
+import UserProfileModal from "./UserProfileModal";
 
 const Header = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredResults, setFilteredResults] = useState([]);
-  
-  // Mock user data - replace with props or state from your admin context later
-  const [userData, setUserData] = useState({
-    first_name: "Admin",
-    last_name: "User",
-    role: "ADMIN",
-    profilePic: null
-  });
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const { user: userData } = useAuth();
 
   const navigate = useNavigate();
 
@@ -31,12 +27,12 @@ const Header = () => {
   // Format user role for display
   const formatRole = (role) => {
     if (!role) return "Guest";
-    
+
     // Convert roles like "ADMIN" or "ERC_TECHNICAL" to readable format
     return role
-      .split('_')
-      .map(word => word.charAt(0) + word.slice(1).toLowerCase())
-      .join(' ');
+      .split("_")
+      .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(" ");
   };
 
   // Handle Search Function
@@ -121,9 +117,12 @@ const Header = () => {
           </button>
 
           {/* Profile Section - Dynamic User Data */}
-          <div className="flex items-center gap-3">
+          <div
+            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setShowProfileModal(true)}
+          >
             <img
-              src={userData.profilePic || defaultProfile}
+              src={userData?.profile_pic || defaultProfile}
               alt="User Profile"
               className="h-10 w-10 md:h-12 md:w-12 rounded-full border-2 border-white object-cover"
               onError={(e) => {
@@ -133,10 +132,14 @@ const Header = () => {
             />
             <div className="text-white hidden md:block">
               <p className="text-sm md:text-base font-semibold">
-                {`${userData.first_name} ${userData.last_name}`}
+                {userData
+                  ? `${userData.first_name || "User"} ${
+                      userData.last_name || ""
+                    }`
+                  : "Guest User"}
               </p>
               <p className="text-xs md:text-sm text-gray-300">
-                {formatRole(userData.role)}
+                {formatRole(userData?.role)}
               </p>
             </div>
           </div>
@@ -169,6 +172,13 @@ const Header = () => {
           )}
         </div>
       )}
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        user={userData}
+      />
     </>
   );
 };

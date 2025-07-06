@@ -52,6 +52,18 @@ const adminReviewController = {
 
       console.log(`Found ${count} applications`);
 
+      // Debug: Log the first application to see the data structure
+      if (rows.length > 0) {
+        console.log(
+          "First application data:",
+          JSON.stringify(rows[0], null, 2)
+        );
+        console.log(
+          "First application applicant data:",
+          JSON.stringify(rows[0].applicant, null, 2)
+        );
+      }
+
       return res.status(200).json({
         total: count,
         totalPages: Math.ceil(count / limit),
@@ -65,6 +77,43 @@ const adminReviewController = {
         message: error.message,
         stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
       });
+    }
+  },
+
+  // Get single application by ID
+  getApplicationById: async (req, res) => {
+    try {
+      const { applicationId } = req.params;
+      const application = await Application.findByPk(applicationId, {
+        include: [
+          {
+            model: Applicant,
+            as: "applicant",
+            attributes: [
+              "applicant_id",
+              "applicant_category",
+              "first_name",
+              "last_name",
+              "email",
+            ],
+          },
+        ],
+      });
+      if (!application) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+
+      // Debug: Log the application data
+      console.log("Application data:", JSON.stringify(application, null, 2));
+      console.log(
+        "Applicant data:",
+        JSON.stringify(application.applicant, null, 2)
+      );
+
+      return res.status(200).json(application);
+    } catch (error) {
+      console.error("Error fetching application:", error);
+      return res.status(500).json({ error: "Failed to fetch application" });
     }
   },
 

@@ -2,6 +2,14 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+// Global session expiration handler
+let sessionExpirationHandler = null;
+
+// Function to set the session expiration handler
+export const setSessionExpirationHandler = (handler) => {
+  sessionExpirationHandler = handler;
+};
+
 // Helper function to get auth token
 const getAuthToken = () => {
   return localStorage.getItem("authToken");
@@ -17,16 +25,48 @@ const createAuthInstance = () => {
 
   if (!token) {
     console.error("No authentication token found!");
-    throw new Error("No authentication token found. Please log in again.");
+    const error = new Error(
+      "No authentication token found. Please log in again."
+    );
+    if (sessionExpirationHandler) {
+      sessionExpirationHandler(error);
+    }
+    throw error;
   }
 
-  return axios.create({
+  const instance = axios.create({
     baseURL: API_URL,
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
   });
+
+  // Add response interceptor to handle session expiration
+  instance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      // Check if it's a session expiration error
+      const isSessionExpired =
+        error?.response?.status === 401 ||
+        error?.response?.status === 403 ||
+        error?.response?.data?.error?.includes("token") ||
+        error?.response?.data?.error?.includes("expired") ||
+        error?.response?.data?.error?.includes("unauthorized") ||
+        error?.response?.data?.message?.includes("token") ||
+        error?.response?.data?.message?.includes("expired") ||
+        error?.response?.data?.message?.includes("unauthorized");
+
+      if (isSessionExpired && sessionExpirationHandler) {
+        console.log("Session expired detected in API call");
+        sessionExpirationHandler(error);
+      }
+
+      return Promise.reject(error);
+    }
+  );
+
+  return instance;
 };
 
 // User Management Services
@@ -186,7 +226,7 @@ export const adminServices = {
   sendApprovalEmail: async (applicationId, emailData) => {
     const instance = createAuthInstance();
     const response = await instance.post(
-      `/admin/applications/${applicationId}/email`,
+      `/admin/applications/${applicationId}/email-applicant`,
       emailData
     );
     return response.data;

@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import UserDetailsModal from "./UserDetailsModal";
 
-const UserList = ({ users, onUpdateStatus, onDeleteUser }) => {
+const UserList = ({ users, onUpdateStatus, onDeleteUser, currentUser }) => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmAction, setConfirmAction] = useState({
     type: null,
@@ -180,76 +180,127 @@ const UserList = ({ users, onUpdateStatus, onDeleteUser }) => {
   const hasActiveFilters = searchQuery || filterRole || filterStatus;
 
   // Render a single user table row
-  const renderUserRow = (user) => (
-    <tr key={user.user_id} className="hover:bg-gray-50">
-      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-        {user.user_id}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {user.first_name} {user.last_name}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {user.email}
-      </td>
-      {!groupByRole && (
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-          {user.role.replace(/_/g, " ")}
+  const renderUserRow = (user) => {
+    // Debug: Log user data to understand the structure (only for first user)
+    if (user.user_id === 1) {
+      console.log("Current user from context:", currentUser);
+      console.log("User from list:", user);
+      console.log("CurrentUser type:", typeof currentUser);
+      console.log("CurrentUser is null:", currentUser === null);
+      console.log("CurrentUser is undefined:", currentUser === undefined);
+      console.log(
+        "User ID comparison:",
+        user.user_id,
+        "===",
+        currentUser?.user_id,
+        "=",
+        user.user_id === currentUser?.user_id
+      );
+      console.log(
+        "Email comparison:",
+        user.email,
+        "===",
+        currentUser?.email,
+        "=",
+        user.email === currentUser?.email
+      );
+    }
+
+    // Test: Check if this is the admin user (user_id: 9, email: 'admin@uoc.lk')
+    const isAdminUser = user.user_id === 9 && user.email === "admin@uoc.lk";
+    if (isAdminUser) {
+      console.log("Found admin user:", user);
+      console.log("Current user context:", currentUser);
+    }
+
+    // Proper comparison - only match if we have a currentUser and the IDs/emails match exactly
+    const isCurrentUser =
+      currentUser &&
+      ((user.user_id &&
+        currentUser.user_id &&
+        user.user_id === currentUser.user_id) ||
+        (user.email && currentUser.email && user.email === currentUser.email));
+
+    const name = `${user.first_name} ${user.last_name}`;
+
+    return (
+      <tr key={user.user_id} className="hover:bg-gray-50">
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+          {user.user_id}
         </td>
-      )}
-      <td className="px-6 py-4 whitespace-nowrap">
-        {user.validity ? (
-          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-            Active
-          </span>
-        ) : (
-          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-            Blocked
-          </span>
-        )}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        <div className="flex items-center space-x-3">
-          <Tooltip label="View User Details">
-            <button
-              onClick={() => handleViewUserDetails(user)}
-              className="text-blue-600 hover:text-blue-800 cursor-pointer"
-            >
-              <Eye size={18} />
-            </button>
-          </Tooltip>
-
-          {user.validity ? (
-            <Tooltip label="Block User Access">
-              <button
-                onClick={() => handleConfirmationShow("block", user.user_id)}
-                className="text-orange-600 hover:text-orange-800 cursor-pointer"
-              >
-                <XCircle size={18} />
-              </button>
-            </Tooltip>
-          ) : (
-            <Tooltip label="Activate User Access">
-              <button
-                onClick={() => handleConfirmationShow("unblock", user.user_id)}
-                className="text-green-600 hover:text-green-800 cursor-pointer"
-              >
-                <CheckCircle size={18} />
-              </button>
-            </Tooltip>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          {name}
+          {isCurrentUser && (
+            <span className="ml-1 text-xs text-blue-600 font-medium">
+              (You)
+            </span>
           )}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          {user.email}
+        </td>
+        {!groupByRole && (
+          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            {user.role.replace(/_/g, " ")}
+          </td>
+        )}
+        <td className="px-6 py-4 whitespace-nowrap">
+          {user.validity ? (
+            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+              Active
+            </span>
+          ) : (
+            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+              Blocked
+            </span>
+          )}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          <div className="flex items-center space-x-3">
+            <Tooltip label="View User Details">
+              <button
+                onClick={() => handleViewUserDetails(user)}
+                className="text-blue-600 hover:text-blue-800 cursor-pointer"
+              >
+                <Eye size={18} />
+              </button>
+            </Tooltip>
 
-          <Tooltip label="Permanently Delete User">
-            <button
-              onClick={() => handleConfirmationShow("delete", user.user_id)}
-              className="text-red-600 hover:text-red-800 cursor-pointer"
-            >
-              <Trash2 size={18} />
-            </button>
-          </Tooltip>
-        </div>
-      </td>
-    </tr>
-  );
+            {user.validity ? (
+              <Tooltip label="Block User Access">
+                <button
+                  onClick={() => handleConfirmationShow("block", user.user_id)}
+                  className="text-orange-600 hover:text-orange-800 cursor-pointer"
+                >
+                  <XCircle size={18} />
+                </button>
+              </Tooltip>
+            ) : (
+              <Tooltip label="Activate User Access">
+                <button
+                  onClick={() =>
+                    handleConfirmationShow("unblock", user.user_id)
+                  }
+                  className="text-green-600 hover:text-green-800 cursor-pointer"
+                >
+                  <CheckCircle size={18} />
+                </button>
+              </Tooltip>
+            )}
+
+            <Tooltip label="Permanently Delete User">
+              <button
+                onClick={() => handleConfirmationShow("delete", user.user_id)}
+                className="text-red-600 hover:text-red-800 cursor-pointer"
+              >
+                <Trash2 size={18} />
+              </button>
+            </Tooltip>
+          </div>
+        </td>
+      </tr>
+    );
+  };
 
   return (
     <div className="bg-white shadow-md rounded-lg overflow-hidden">

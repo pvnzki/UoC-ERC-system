@@ -2,11 +2,16 @@ import { Search, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom"; // ✅ Import useNavigate
 import logo from "../../../assets/Applicant/logo-menu.png";
+import defaultProfile from "../../../assets/default-profile.png";
+import { useAuth } from "../../../../context/auth/AuthContext";
+import UserProfileModal from "../../TechnicalAdmin/genaral/UserProfileModal";
 
 const CTS_Header = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredResults, setFilteredResults] = useState([]);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const { user: userData } = useAuth();
 
   const navigate = useNavigate(); // ✅ Initialize useNavigate()
 
@@ -19,10 +24,15 @@ const CTS_Header = () => {
     { id: 5, name: "Edward Brown", email: "edward@example.com" },
   ];
 
-  const user = {
-    name: "John Doe",
-    role: "ERC Office Staff",
-    profilePic: "/profile.jpg",
+  // Format user role for display
+  const formatRole = (role) => {
+    if (!role) return "Guest";
+
+    // Convert roles like "ADMIN" or "ERC_TECHNICAL" to readable format
+    return role
+      .split("_")
+      .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(" ");
   };
 
   // Handle Search Function
@@ -99,15 +109,30 @@ const CTS_Header = () => {
           </button>
 
           {/* Profile Section */}
-          <div className="flex items-center gap-3">
+          <div
+            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setShowProfileModal(true)}
+          >
             <img
-              src={user.profilePic}
+              src={userData?.profile_pic || defaultProfile}
               alt="User Profile"
               className="h-10 w-10 md:h-14 md:w-14 rounded-full border-2 border-white object-cover"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = defaultProfile;
+              }}
             />
             <div className="text-white hidden md:block">
-              <p className="text-sm md:text-lg font-semibold">{user.name}</p>
-              <p className="text-xs md:text-sm text-gray-300">{user.role}</p>
+              <p className="text-sm md:text-lg font-semibold">
+                {userData
+                  ? `${userData.first_name || "User"} ${
+                      userData.last_name || ""
+                    }`
+                  : "Guest User"}
+              </p>
+              <p className="text-xs md:text-sm text-gray-300">
+                {formatRole(userData?.role)}
+              </p>
             </div>
           </div>
         </div>
@@ -139,6 +164,13 @@ const CTS_Header = () => {
           )}
         </div>
       )}
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        user={userData}
+      />
     </>
   );
 };
