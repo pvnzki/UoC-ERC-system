@@ -63,8 +63,10 @@ const CTS_Header = () => {
     <>
       {/* Header */}
       <header
-        className={`bg-gradient-to-r from-[#0A1F44] to-[#0F2E64] border-b border-white/20 shadow-lg px-6 md:px-16 lg:px-32 py-4 flex items-center justify-between z-50 fixed top-0 left-0 right-0 transition-all duration-500 ease-in-out ${isDarkMode ? 'dark' : ''}`}
-        style={{backdropFilter: 'blur(0px)'}}
+        className={`bg-gradient-to-r from-[#0A1F44] to-[#0F2E64] border-b border-white/20 shadow-lg px-6 md:px-16 lg:px-32 py-4 flex items-center justify-between z-50 fixed top-0 left-0 right-0 transition-all duration-500 ease-in-out ${
+          isDarkMode ? "dark" : ""
+        }`}
+        style={{ backdropFilter: "blur(0px)" }}
       >
         <div className="flex items-center">
           <img
@@ -110,7 +112,9 @@ const CTS_Header = () => {
           {/* Notifications */}
           <button className="liquid-button p-3 rounded-full relative transition-all duration-500 ease-in-out hover:scale-105 active:scale-95 focus:ring-2 focus:ring-blue-400/40">
             <Bell className="w-5 h-5 text-white" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-md">1</span>
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-md">
+              1
+            </span>
           </button>
           {/* Settings */}
           <button className="liquid-button p-3 rounded-full transition-all duration-500 ease-in-out hover:scale-105 active:scale-95 focus:ring-2 focus:ring-blue-400/40">

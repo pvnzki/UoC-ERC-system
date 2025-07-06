@@ -1,18 +1,23 @@
 // src/pages/TechnicalAdmin/Dashboard.jsx
 import React, { useState } from "react";
+import { useTheme } from "../../context/theme/ThemeContext";
 import Header from "../../components/TechnicalAdmin/genaral/Header";
 import Sidebar from "../../components/TechnicalAdmin/genaral/SideBar";
+import DashboardOverview from "../../components/TechnicalAdmin/Dashboard/DashboardOverview";
 import CommitteeManagement from "../../components/TechnicalAdmin/CommitteeManagement/CommitteeManagement";
 import UserManagement from "../../components/TechnicalAdmin/UserManagement/UserManagement";
 import ApplicationReview from "../../components/TechnicalAdmin/ApplicationReview/ApplicationReview";
 import MeetingManagement from "../../components/TechnicalAdmin/MeetingManagement/MeetingManagement";
 
 const Dashboard = () => {
-  const [currentView, setCurrentView] = useState("applications");
+  const [currentView, setCurrentView] = useState("dashboard");
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { isDarkMode } = useTheme();
 
   const renderContent = () => {
     switch (currentView) {
+      case "dashboard":
+        return <DashboardOverview setCurrentView={setCurrentView} />;
       case "committees":
         return <CommitteeManagement />;
       case "users":
@@ -20,13 +25,18 @@ const Dashboard = () => {
       case "meetings":
         return <MeetingManagement />;
       case "applications":
-      default:
         return <ApplicationReview />;
+      default:
+        return <DashboardOverview setCurrentView={setCurrentView} />;
     }
   };
 
   return (
-    <div className="h-screen flex flex-col">
+    <div
+      className={`h-screen flex flex-col ${
+        isDarkMode ? "bg-gray-900" : "bg-gray-50"
+      }`}
+    >
       <div className="fixed top-0 left-0 w-full z-50">
         <Header />
       </div>
@@ -40,7 +50,15 @@ const Dashboard = () => {
         />
 
         <div
-          className={`flex-grow bg-gray-100 transition-all duration-300 p-6 overflow-y-auto`}
+          className={`flex-grow transition-all duration-300 p-6 overflow-y-auto ${
+            currentView === "dashboard"
+              ? isDarkMode
+                ? "bg-gray-900"
+                : "bg-gray-50"
+              : isDarkMode
+              ? "bg-gray-800"
+              : "bg-gray-100"
+          }`}
         >
           {renderContent()}
         </div>

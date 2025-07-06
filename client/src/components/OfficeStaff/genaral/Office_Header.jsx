@@ -84,9 +84,9 @@ const Office_Header = () => {
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search Applicant..."
-              className="w-full bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-3 rounded-full focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 placeholder-gray-300 transition-all duration-500 ease-in-out shadow-sm"
+              className="w-full bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-3 rounded-full focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 placeholder-gray-200 transition-all duration-500 ease-in-out shadow-sm"
             />
-            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-300 w-5 h-5 pointer-events-none transition-all duration-500" />
+            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-200 w-5 h-5 pointer-events-none transition-all duration-500" />
           </div>
           {filteredResults.length > 0 && (
             <div className="absolute top-full mt-2 left-0 w-full glass-card overflow-hidden z-50 animate-fade-in">
@@ -98,7 +98,7 @@ const Office_Header = () => {
                   tabIndex={0}
                 >
                   <div className="text-white font-medium">{applicant.name}</div>
-                  <div className="text-gray-300 text-sm">{applicant.email}</div>
+                  <div className="text-gray-200 text-sm">{applicant.email}</div>
                 </div>
               ))}
             </div>
@@ -154,7 +154,7 @@ const Office_Header = () => {
                     }`
                   : "Guest User"}
               </p>
-              <p className="text-xs md:text-sm text-gray-300">
+              <p className="text-xs md:text-sm text-gray-200">
                 {formatRole(userData?.role)}
               </p>
             </div>
@@ -171,9 +171,9 @@ const Office_Header = () => {
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search Applicant..."
-              className="w-full bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-3 rounded-full focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 placeholder-gray-300 transition-all duration-500 ease-in-out shadow-sm"
+              className="w-full bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-3 rounded-full focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 placeholder-gray-200 transition-all duration-500 ease-in-out shadow-sm"
             />
-            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-300 w-5 h-5 pointer-events-none transition-all duration-500" />
+            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-200 w-5 h-5 pointer-events-none transition-all duration-500" />
           </div>
           {filteredResults.length > 0 && (
             <div className="mt-2 glass-card overflow-hidden animate-fade-in">
@@ -185,7 +185,7 @@ const Office_Header = () => {
                   tabIndex={0}
                 >
                   <div className="text-white font-medium">{applicant.name}</div>
-                  <div className="text-gray-300 text-sm">{applicant.email}</div>
+                  <div className="text-gray-200 text-sm">{applicant.email}</div>
                 </div>
               ))}
             </div>

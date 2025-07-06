@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { useState } from "react";
+import { useTheme } from "../context/theme/ThemeContext";
 import Home from "../pages/TechnicalAdmin/Home.jsx";
 import Header from "../components/TechnicalAdmin/genaral/Header.jsx";
 import Sidebar from "../components/TechnicalAdmin/genaral/SideBar.jsx";
@@ -10,9 +11,14 @@ import Eval from "../pages/TechnicalAdmin/Evaluated.jsx";
 
 const ERCTechnicalCommitteeRoutes = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { isDarkMode } = useTheme();
 
   return (
-    <div className="h-screen flex flex-col">
+    <div
+      className={`h-screen flex flex-col ${
+        isDarkMode ? "bg-gray-900" : "bg-gray-50"
+      }`}
+    >
       {/* Header */}
       <div className="fixed top-0 left-0 w-full z-50">
         <Header />
@@ -24,7 +30,11 @@ const ERCTechnicalCommitteeRoutes = () => {
         <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
         {/* Main Content */}
-        <div className={`flex-grow bg-gray-100 transition-all duration-300`}>
+        <div
+          className={`flex-grow transition-all duration-300 p-6 overflow-y-auto ${
+            isDarkMode ? "bg-gray-800" : "bg-gray-100"
+          }`}
+        >
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/:id" element={<ApplicationDetails />} />

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { Loader2, AlertCircle } from "lucide-react";
 import pdf from "../../assets/TechnicalAdmin/Group 4.png";
+import { adminServices } from "../../../services/admin-services";
 
 const Card = ({ children, className = "" }) => (
   <div className={`bg-white rounded-lg shadow-md p-6 ${className}`}>
@@ -10,63 +12,95 @@ const Card = ({ children, className = "" }) => (
 
 const EvaluatedApplicationDetails = () => {
   const { id } = useParams();
-  const [applicationDetails, setApplicationDetails] = useState({
-    userName: "....................",
-    userId: "........",
-    userEmail: ".............",
-    applicationCategory: ".....",
-    researchType: ".....",
-    applyDate: ".....",
-    applyTime: ".....",
-  });
-  const [documents, setDocuments] = useState([
-    {
-      id: 1,
-      name: "Document 1",
-      fileName: "research-resources.pdf",
-      status: "Approved",
-    },
-    { id: 2, name: "Document 2", fileName: "proposal.pdf", status: "Rejected" },
-    { id: 3, name: "Document 3", fileName: "cv.pdf", status: "Approved" },
-    {
-      id: 4,
-      name: "Document 4",
-      fileName: "research-consent-form.pdf",
-      status: "Rejected",
-    },
-    {
-      id: 5,
-      name: "Payment Slip",
-      fileName: "payment636383.pdf",
-      status: "Approved",
-    },
-  ]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [applicationDetails, setApplicationDetails] = useState(null);
+  const [documents, setDocuments] = useState([]);
 
   useEffect(() => {
     // Fetch application details and documents using the ID from useParams
     const fetchApplicationData = async () => {
       try {
-        const response = await fetch(`/api/applications/${id}`);
-        const data = await response.json();
-        setApplicationDetails(data.application);
-        setDocuments(data.documents);
+        setLoading(true);
+        setError(null);
+
+        const response = await adminServices.getApplication(id);
+        setApplicationDetails(response.application || response);
+
+        // If documents are included in the response, use them
+        if (response.documents) {
+          setDocuments(response.documents);
+        } else {
+          // Fallback to basic document structure if not provided
+          setDocuments([
+            {
+              id: 1,
+              name: "Research Proposal",
+              fileName: "research-proposal.pdf",
+              status: "Approved",
+            },
+            {
+              id: 2,
+              name: "CV/Resume",
+              fileName: "cv.pdf",
+              status: "Approved",
+            },
+            {
+              id: 3,
+              name: "Payment Receipt",
+              fileName: "payment-receipt.pdf",
+              status: "Approved",
+            },
+          ]);
+        }
       } catch (error) {
         console.error("Error fetching application details:", error);
+        setError("Failed to load application details. Please try again.");
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchApplicationData();
+    if (id) {
+      fetchApplicationData();
+    }
   }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-lg text-gray-600">
+            Loading application details...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="w-8 h-8 mx-auto mb-4 text-red-500" />
+          <p className="text-lg text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!applicationDetails) {
+    return (
+      <div className="text-center text-lg font-semibold p-6">
+        Application not found
+      </div>
+    );
+  }
 
   const hasRejectedDocuments = documents.some(
     (doc) => doc.status === "Rejected"
   );
-
-  if (!applicationDetails) {
-    return (
-      <div className="text-center text-lg font-semibold p-6">Loading...</div>
-    );
-  }
 
   return (
     <div className="w-full bg-gray-100 p-6 rounded-lg shadow-md overflow-y-auto h-screen pb-20">
@@ -75,28 +109,46 @@ const EvaluatedApplicationDetails = () => {
         <div className="border-b pb-4 mb-4 grid grid-cols-2 gap-4 text-sm text-gray-700">
           <div>
             <p>
-              <strong>User Name:</strong> {applicationDetails.userName}
+              <strong>User Name:</strong>{" "}
+              {applicationDetails.applicant
+                ? `${applicationDetails.applicant.first_name || ""} ${
+                    applicationDetails.applicant.last_name || ""
+                  }`.trim()
+                : "N/A"}
             </p>
             <p>
-              <strong>User ID:</strong> {applicationDetails.userId}
+              <strong>User ID:</strong>{" "}
+              {applicationDetails.applicant?.applicant_id ||
+                applicationDetails.application_id ||
+                "N/A"}
             </p>
             <p>
-              <strong>User Email:</strong> {applicationDetails.userEmail}
+              <strong>User Email:</strong>{" "}
+              {applicationDetails.applicant?.email || "N/A"}
             </p>
             <p>
               <strong>Application Category:</strong>{" "}
-              {applicationDetails.applicationCategory}
+              {applicationDetails.research_category ||
+                applicationDetails.category ||
+                "N/A"}
             </p>
             <p>
-              <strong>Research Type:</strong> {applicationDetails.researchType}
+              <strong>Research Type:</strong>{" "}
+              {applicationDetails.research_type || "N/A"}
             </p>
           </div>
           <div>
             <p>
-              <strong>Apply Date:</strong> {applicationDetails.applyDate}
+              <strong>Apply Date:</strong>{" "}
+              {applicationDetails.created_at
+                ? new Date(applicationDetails.created_at).toLocaleDateString()
+                : "N/A"}
             </p>
             <p>
-              <strong>Apply Time:</strong> {applicationDetails.applyTime}
+              <strong>Apply Time:</strong>{" "}
+              {applicationDetails.created_at
+                ? new Date(applicationDetails.created_at).toLocaleTimeString()
+                : "N/A"}
             </p>
           </div>
         </div>
