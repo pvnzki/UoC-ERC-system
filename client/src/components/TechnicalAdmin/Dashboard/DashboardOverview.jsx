@@ -17,6 +17,14 @@ import {
   CalendarPlus,
   FileCheck,
   Loader2,
+  TrendingDown,
+  Download,
+  RefreshCw,
+  PieChart,
+  LineChart,
+  Target,
+  Award,
+  Zap,
 } from "lucide-react";
 import { useTheme } from "../../../context/theme/ThemeContext";
 import { adminServices } from "../../../../services/admin-services";
@@ -25,6 +33,8 @@ const DashboardOverview = ({ setCurrentView }) => {
   const { isDarkMode } = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [timeRange, setTimeRange] = useState("30d");
   const [stats, setStats] = useState({
     totalApplications: 0,
     pendingApplications: 0,
@@ -41,6 +51,14 @@ const DashboardOverview = ({ setCurrentView }) => {
   });
 
   const [recentActivities, setRecentActivities] = useState([]);
+  const [analyticsData, setAnalyticsData] = useState({
+    applicationTrends: [],
+    committeePerformance: [],
+    userGrowth: [],
+    processingTimes: [],
+    categoryDistribution: [],
+    monthlyStats: [],
+  });
 
   // Fetch dashboard data
   const fetchDashboardData = async () => {
@@ -58,14 +76,19 @@ const DashboardOverview = ({ setCurrentView }) => {
         return;
       }
 
-      // Fetch stats and activities in parallel
-      const [statsResponse, activitiesResponse] = await Promise.all([
-        adminServices.getDashboardStats(),
-        adminServices.getRecentActivities(5),
-      ]);
+      // Fetch stats, activities, and analytics in parallel
+      const [statsResponse, activitiesResponse, analyticsResponse] =
+        await Promise.all([
+          adminServices.getDashboardStats(),
+          adminServices.getRecentActivities(5),
+          adminServices.getAnalyticsData
+            ? adminServices.getAnalyticsData(timeRange)
+            : generateMockAnalyticsData(),
+        ]);
 
       setStats(statsResponse);
       setRecentActivities(activitiesResponse);
+      setAnalyticsData(analyticsResponse);
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
       setError("Failed to load dashboard data. Please try again.");
@@ -153,15 +176,103 @@ const DashboardOverview = ({ setCurrentView }) => {
         })) || [];
 
       setRecentActivities(recentApps);
+
+      // Generate mock analytics data
+      setAnalyticsData(generateMockAnalyticsData());
     } catch (err) {
       console.error("Error fetching fallback data:", err);
       setError("Unable to load dashboard data. Please check your connection.");
     }
   };
 
+  // Generate mock analytics data
+  const generateMockAnalyticsData = () => {
+    const now = new Date();
+    const months = [];
+    const applicationTrends = [];
+    const userGrowth = [];
+    const processingTimes = [];
+    const monthlyStats = [];
+
+    // Generate last 12 months data
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = date.toLocaleDateString("en-US", { month: "short" });
+      months.push(monthName);
+
+      // Application trends
+      applicationTrends.push({
+        month: monthName,
+        submitted: Math.floor(Math.random() * 50) + 20,
+        approved: Math.floor(Math.random() * 30) + 10,
+        rejected: Math.floor(Math.random() * 15) + 5,
+      });
+
+      // User growth
+      userGrowth.push({
+        month: monthName,
+        newUsers: Math.floor(Math.random() * 20) + 5,
+        activeUsers: Math.floor(Math.random() * 100) + 50,
+      });
+
+      // Processing times
+      processingTimes.push({
+        month: monthName,
+        averageDays: (Math.random() * 5 + 2).toFixed(1),
+      });
+
+      // Monthly stats
+      monthlyStats.push({
+        month: monthName,
+        applications: Math.floor(Math.random() * 50) + 20,
+        approvals: Math.floor(Math.random() * 30) + 10,
+        meetings: Math.floor(Math.random() * 10) + 2,
+      });
+    }
+
+    return {
+      applicationTrends,
+      committeePerformance: [
+        {
+          name: "Research Ethics Committee",
+          applications: 45,
+          approvalRate: 78,
+          avgTime: 3.2,
+        },
+        {
+          name: "Clinical Trials Committee",
+          applications: 32,
+          approvalRate: 85,
+          avgTime: 2.8,
+        },
+        {
+          name: "Animal Research Committee",
+          applications: 28,
+          approvalRate: 72,
+          avgTime: 4.1,
+        },
+        {
+          name: "Data Protection Committee",
+          applications: 19,
+          approvalRate: 90,
+          avgTime: 2.5,
+        },
+      ],
+      userGrowth,
+      processingTimes,
+      categoryDistribution: [
+        { category: "Clinical Research", count: 35, percentage: 35 },
+        { category: "Basic Research", count: 28, percentage: 28 },
+        { category: "Social Sciences", count: 22, percentage: 22 },
+        { category: "Engineering", count: 15, percentage: 15 },
+      ],
+      monthlyStats,
+    };
+  };
+
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [timeRange]);
 
   const quickActions = [
     {
@@ -228,6 +339,117 @@ const DashboardOverview = ({ setCurrentView }) => {
     }
   };
 
+  const StatCard = ({ title, value, change, icon, subtitle }) => (
+    <div className="liquid-card p-6 rounded-xl transition-all duration-500 ease-out transform hover:scale-[1.02] hover:shadow-xl group">
+      <div className="flex items-center justify-between mb-4">
+        <div
+          className={`p-3 rounded-xl transition-all duration-500 ease-out transform group-hover:scale-110 ${
+            isDarkMode
+              ? "bg-white/5 text-gray-300 group-hover:text-white"
+              : "bg-gray-100/50 text-gray-600 group-hover:text-gray-900"
+          }`}
+        >
+          {icon}
+        </div>
+        <div className="text-right">
+          {change && (
+            <div
+              className={`flex items-center text-sm transition-all duration-300 ${
+                change > 0 ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {change > 0 ? (
+                <TrendingUp size={16} />
+              ) : (
+                <TrendingDown size={16} />
+              )}
+              <span className="ml-1">{Math.abs(change)}%</span>
+            </div>
+          )}
+        </div>
+      </div>
+      <div>
+        <h3
+          className={`text-2xl font-bold mb-1 transition-all duration-300 ${
+            isDarkMode ? "text-white" : "text-gray-900"
+          }`}
+        >
+          {value}
+        </h3>
+        <p
+          className={`text-sm transition-all duration-300 ${
+            isDarkMode ? "text-gray-300" : "text-gray-600"
+          }`}
+        >
+          {title}
+        </p>
+        {subtitle && (
+          <p
+            className={`text-xs mt-1 transition-all duration-300 ${
+              isDarkMode ? "text-gray-400" : "text-gray-500"
+            }`}
+          >
+            {subtitle}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+
+  const ChartCard = ({ title, children, className = "" }) => (
+    <div
+      className={`liquid-card p-6 rounded-xl transition-all duration-500 ease-out transform hover:scale-[1.01] hover:shadow-xl ${className}`}
+    >
+      <h3
+        className={`text-lg font-semibold mb-4 transition-all duration-300 ${
+          isDarkMode ? "text-white" : "text-gray-900"
+        }`}
+      >
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+
+  const MiniChart = ({ data, color, height = 60 }) => (
+    <div className="relative" style={{ height }}>
+      <svg
+        className="w-full h-full"
+        viewBox={`0 0 ${data.length * 20} ${height}`}
+      >
+        <path
+          d={data
+            .map(
+              (value, index) =>
+                `${index === 0 ? "M" : "L"} ${index * 20} ${
+                  height - (value / Math.max(...data)) * height
+                }`
+            )
+            .join(" ")}
+          stroke={color}
+          strokeWidth="2"
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d={data
+            .map(
+              (value, index) =>
+                `${index === 0 ? "M" : "L"} ${index * 20} ${
+                  height - (value / Math.max(...data)) * height
+                }`
+            )
+            .join(" ")}
+          stroke={color}
+          strokeWidth="0"
+          fill={color}
+          fillOpacity="0.1"
+        />
+      </svg>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -268,199 +490,38 @@ const DashboardOverview = ({ setCurrentView }) => {
     );
   }
 
-  return (
+  const renderOverviewTab = () => (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="mb-6">
-        <h1
-          className={`text-2xl font-bold mb-1 ${
-            isDarkMode ? "text-white" : "text-black"
-          }`}
-        >
-          Dashboard Overview
-        </h1>
-        <p
-          className={`text-sm ${
-            isDarkMode ? "text-gray-300" : "text-gray-600"
-          }`}
-        >
-          Welcome back! Here's what's happening with your ERC system.
-        </p>
-      </div>
-
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Applications Stats */}
-        <div
-          className={`p-4 rounded-lg border-2 shadow-sm transition-all duration-300 hover:shadow-md ${
-            isDarkMode
-              ? "bg-gray-800 border-gray-600 hover:border-gray-500 shadow-gray-900/50"
-              : "bg-white border-gray-300 hover:border-gray-400 shadow-gray-200/50"
-          }`}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div
-              className={`p-2 rounded-md ${
-                isDarkMode ? "bg-blue-900/60" : "bg-blue-100"
-              }`}
-            >
-              <FileText className="w-5 h-5 text-blue-700 dark:text-blue-300" />
-            </div>
-            <span
-              className={`text-xs font-semibold ${
-                isDarkMode ? "text-gray-300" : "text-gray-600"
-              }`}
-            >
-              Applications
-            </span>
-          </div>
-          <div className="mb-2">
-            <span
-              className={`text-2xl font-bold ${
-                isDarkMode ? "text-white" : "text-black"
-              }`}
-            >
-              {stats.totalApplications}
-            </span>
-          </div>
-          <div className="flex items-center space-x-3 text-xs">
-            <span className="text-green-700 dark:text-green-300 font-medium">
-              {stats.approvedApplications} Approved
-            </span>
-            <span className="text-yellow-700 dark:text-yellow-300 font-medium">
-              {stats.pendingApplications} Pending
-            </span>
-          </div>
-        </div>
-
-        {/* Committees Stats */}
-        <div
-          className={`p-4 rounded-lg border-2 shadow-sm transition-all duration-300 hover:shadow-md ${
-            isDarkMode
-              ? "bg-gray-800 border-gray-600 hover:border-gray-500 shadow-gray-900/50"
-              : "bg-white border-gray-300 hover:border-gray-400 shadow-gray-200/50"
-          }`}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div
-              className={`p-2 rounded-md ${
-                isDarkMode ? "bg-green-900/60" : "bg-green-100"
-              }`}
-            >
-              <Users className="w-5 h-5 text-green-700 dark:text-green-300" />
-            </div>
-            <span
-              className={`text-xs font-semibold ${
-                isDarkMode ? "text-gray-300" : "text-gray-600"
-              }`}
-            >
-              Committees
-            </span>
-          </div>
-          <div className="mb-2">
-            <span
-              className={`text-2xl font-bold ${
-                isDarkMode ? "text-white" : "text-black"
-              }`}
-            >
-              {stats.totalCommittees}
-            </span>
-          </div>
-          <div className="flex items-center space-x-3 text-xs">
-            <span className="text-green-700 dark:text-green-300 font-medium">
-              {stats.activeCommittees} Active
-            </span>
-            <span className="text-gray-600 dark:text-gray-400 font-medium">
-              {stats.totalCommittees - stats.activeCommittees} Inactive
-            </span>
-          </div>
-        </div>
-
-        {/* Users Stats */}
-        <div
-          className={`p-4 rounded-lg border-2 shadow-sm transition-all duration-300 hover:shadow-md ${
-            isDarkMode
-              ? "bg-gray-800 border-gray-600 hover:border-gray-500 shadow-gray-900/50"
-              : "bg-white border-gray-300 hover:border-gray-400 shadow-gray-200/50"
-          }`}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div
-              className={`p-2 rounded-md ${
-                isDarkMode ? "bg-purple-900/60" : "bg-purple-100"
-              }`}
-            >
-              <UserPlus className="w-5 h-5 text-purple-700 dark:text-purple-300" />
-            </div>
-            <span
-              className={`text-xs font-semibold ${
-                isDarkMode ? "text-gray-300" : "text-gray-600"
-              }`}
-            >
-              Users
-            </span>
-          </div>
-          <div className="mb-2">
-            <span
-              className={`text-2xl font-bold ${
-                isDarkMode ? "text-white" : "text-black"
-              }`}
-            >
-              {stats.totalUsers}
-            </span>
-          </div>
-          <div className="flex items-center space-x-3 text-xs">
-            <span className="text-green-700 dark:text-green-300 font-medium">
-              {stats.activeUsers} Active
-            </span>
-            <span className="text-gray-600 dark:text-gray-400 font-medium">
-              {stats.totalUsers - stats.activeUsers} Inactive
-            </span>
-          </div>
-        </div>
-
-        {/* Meetings Stats */}
-        <div
-          className={`p-4 rounded-lg border-2 shadow-sm transition-all duration-300 hover:shadow-md ${
-            isDarkMode
-              ? "bg-gray-800 border-gray-600 hover:border-gray-500 shadow-gray-900/50"
-              : "bg-white border-gray-300 hover:border-gray-400 shadow-gray-200/50"
-          }`}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div
-              className={`p-2 rounded-md ${
-                isDarkMode ? "bg-orange-900/60" : "bg-orange-100"
-              }`}
-            >
-              <Calendar className="w-5 h-5 text-orange-700 dark:text-orange-300" />
-            </div>
-            <span
-              className={`text-xs font-semibold ${
-                isDarkMode ? "text-gray-300" : "text-gray-600"
-              }`}
-            >
-              Meetings
-            </span>
-          </div>
-          <div className="mb-2">
-            <span
-              className={`text-2xl font-bold ${
-                isDarkMode ? "text-white" : "text-black"
-              }`}
-            >
-              {stats.upcomingMeetings}
-            </span>
-          </div>
-          <div className="flex items-center space-x-3 text-xs">
-            <span className="text-blue-700 dark:text-blue-300 font-medium">
-              {stats.upcomingMeetings} Upcoming
-            </span>
-            <span className="text-gray-600 dark:text-gray-400 font-medium">
-              {stats.completedMeetings} Completed
-            </span>
-          </div>
-        </div>
+        <StatCard
+          title="Total Applications"
+          value={stats.totalApplications}
+          change={12.5}
+          icon={<FileText className="w-6 h-6 text-blue-600" />}
+          subtitle={`${stats.pendingApplications} pending review`}
+        />
+        <StatCard
+          title="Approval Rate"
+          value={`${stats.approvalRate}%`}
+          change={5.2}
+          icon={<CheckCircle className="w-6 h-6 text-green-600" />}
+          subtitle="Average processing time: 3.2 days"
+        />
+        <StatCard
+          title="Active Committees"
+          value={stats.activeCommittees}
+          change={-2.1}
+          icon={<Users className="w-6 h-6 text-purple-600" />}
+          subtitle={`${stats.totalCommittees} total committees`}
+        />
+        <StatCard
+          title="Upcoming Meetings"
+          value={stats.upcomingMeetings}
+          change={8.7}
+          icon={<Calendar className="w-6 h-6 text-orange-600" />}
+          subtitle={`${stats.completedMeetings} completed this month`}
+        />
       </div>
 
       {/* Quick Actions */}
@@ -477,20 +538,16 @@ const DashboardOverview = ({ setCurrentView }) => {
             <button
               key={index}
               onClick={action.action}
-              className={`p-4 rounded-lg border-2 transition-all duration-300 hover:shadow-md hover:scale-105 text-left ${
-                isDarkMode
-                  ? "bg-gray-800 border-gray-600 hover:border-gray-500 hover:bg-gray-700 shadow-gray-900/50"
-                  : "bg-white border-gray-300 hover:border-gray-400 hover:bg-gray-50 shadow-gray-200/50"
-              }`}
+              className={`liquid-card p-4 rounded-lg transition-all duration-300 hover:scale-105 active:scale-95 text-left`}
             >
               <div
-                className={`inline-flex p-2 rounded-md mb-3 ${action.color} text-white shadow-sm`}
+                className={`inline-flex p-2 rounded-md mb-3 backdrop-blur-sm bg-gray-700/60 dark:bg-gray-600/60 text-white shadow-sm`}
               >
                 {action.icon}
               </div>
               <h3
                 className={`font-semibold text-sm mb-1 ${
-                  isDarkMode ? "text-white" : "text-black"
+                  isDarkMode ? "text-white" : "text-gray-900"
                 }`}
               >
                 {action.title}
@@ -507,15 +564,11 @@ const DashboardOverview = ({ setCurrentView }) => {
         </div>
       </div>
 
-      {/* Analytics and Recent Activities */}
+      {/* Analytics Summary and Recent Activities */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Analytics Summary */}
         <div
-          className={`p-4 rounded-lg border-2 shadow-sm ${
-            isDarkMode
-              ? "bg-gray-800 border-gray-600 shadow-gray-900/50"
-              : "bg-white border-gray-300 shadow-gray-200/50"
-          }`}
+          className={`liquid-card p-4 rounded-lg transition-all duration-300 hover:scale-105 active:scale-95`}
         >
           <h2
             className={`text-lg font-semibold mb-3 ${
@@ -526,10 +579,10 @@ const DashboardOverview = ({ setCurrentView }) => {
           </h2>
           <div className="space-y-3">
             <div
-              className={`flex items-center justify-between p-3 rounded-md border ${
+              className={`flex items-center justify-between p-3 rounded-md border backdrop-blur-sm ${
                 isDarkMode
-                  ? "bg-blue-900/30 border-blue-700"
-                  : "bg-blue-50 border-blue-200"
+                  ? "bg-gray-700/30 border-gray-600/50"
+                  : "bg-gray-50/80 border-gray-200/50"
               }`}
             >
               <div>
@@ -548,15 +601,15 @@ const DashboardOverview = ({ setCurrentView }) => {
                   Days to process applications
                 </p>
               </div>
-              <span className="text-xl font-bold text-blue-700 dark:text-blue-300">
+              <span className="text-xl font-bold text-gray-700 dark:text-gray-300">
                 {stats.averageProcessingTime}
               </span>
             </div>
             <div
-              className={`flex items-center justify-between p-3 rounded-md border ${
+              className={`flex items-center justify-between p-3 rounded-md border backdrop-blur-sm ${
                 isDarkMode
-                  ? "bg-green-900/30 border-green-700"
-                  : "bg-green-50 border-green-200"
+                  ? "bg-gray-700/30 border-gray-600/50"
+                  : "bg-gray-50/80 border-gray-200/50"
               }`}
             >
               <div>
@@ -575,15 +628,15 @@ const DashboardOverview = ({ setCurrentView }) => {
                   Percentage of approved applications
                 </p>
               </div>
-              <span className="text-xl font-bold text-green-700 dark:text-green-300">
+              <span className="text-xl font-bold text-gray-700 dark:text-gray-300">
                 {stats.approvalRate}%
               </span>
             </div>
             <div
-              className={`flex items-center justify-between p-3 rounded-md border ${
+              className={`flex items-center justify-between p-3 rounded-md border backdrop-blur-sm ${
                 isDarkMode
-                  ? "bg-purple-900/30 border-purple-700"
-                  : "bg-purple-50 border-purple-200"
+                  ? "bg-gray-700/30 border-gray-600/50"
+                  : "bg-gray-50/80 border-gray-200/50"
               }`}
             >
               <div>
@@ -602,7 +655,7 @@ const DashboardOverview = ({ setCurrentView }) => {
                   Currently operational
                 </p>
               </div>
-              <span className="text-xl font-bold text-purple-700 dark:text-purple-300">
+              <span className="text-xl font-bold text-gray-700 dark:text-gray-300">
                 {stats.activeCommittees}
               </span>
             </div>
@@ -611,11 +664,7 @@ const DashboardOverview = ({ setCurrentView }) => {
 
         {/* Recent Activities */}
         <div
-          className={`p-4 rounded-lg border-2 shadow-sm ${
-            isDarkMode
-              ? "bg-gray-800 border-gray-600 shadow-gray-900/50"
-              : "bg-white border-gray-300 shadow-gray-200/50"
-          }`}
+          className={`liquid-card p-4 rounded-lg transition-all duration-300 hover:scale-105 active:scale-95`}
         >
           <h2
             className={`text-lg font-semibold mb-3 ${
@@ -629,10 +678,10 @@ const DashboardOverview = ({ setCurrentView }) => {
               recentActivities.map((activity) => (
                 <div
                   key={activity.id}
-                  className={`flex items-start space-x-3 p-3 rounded-md border transition-colors duration-200 ${
+                  className={`flex items-start space-x-3 p-3 rounded-md border transition-colors duration-200 backdrop-blur-sm ${
                     isDarkMode
-                      ? "border-gray-700 hover:bg-gray-700 hover:border-gray-600"
-                      : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                      ? "border-gray-700/50 hover:bg-gray-700/50 hover:border-gray-600/50"
+                      : "border-gray-200/50 hover:bg-gray-50/80 hover:border-gray-300/50"
                   }`}
                 >
                   <div className="flex-shrink-0 mt-0.5">
@@ -674,21 +723,587 @@ const DashboardOverview = ({ setCurrentView }) => {
               </div>
             )}
           </div>
-          <button
-            onClick={() => setCurrentView("analytics")}
-            className={`mt-3 w-full p-3 text-center rounded-md border-2 border-dashed transition-colors duration-200 ${
-              isDarkMode
-                ? "border-gray-600 hover:border-blue-400 hover:bg-gray-700 text-gray-300 hover:text-white"
-                : "border-gray-300 hover:border-blue-400 hover:bg-gray-50 text-gray-600 hover:text-black"
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderAnalyticsTab = () => (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1
+            className={`text-2xl font-bold mb-1 ${
+              isDarkMode ? "text-white" : "text-black"
             }`}
           >
-            <BarChart3 className="w-4 h-4 mx-auto mb-1" />
-            <span className="text-xs font-medium">View All Activities</span>
+            Analytics Dashboard
+          </h1>
+          <p
+            className={`text-sm ${
+              isDarkMode ? "text-gray-300" : "text-gray-600"
+            }`}
+          >
+            Comprehensive insights into your ERC system performance
+          </p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+            className={`px-3 py-2 rounded-md border text-sm ${
+              isDarkMode
+                ? "bg-gray-700 border-gray-600 text-white"
+                : "bg-white border-gray-300 text-gray-900"
+            }`}
+          >
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="90d">Last 90 days</option>
+            <option value="1y">Last year</option>
+          </select>
+          <button
+            onClick={fetchDashboardData}
+            className={`p-2 rounded-md transition-colors ${
+              isDarkMode
+                ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            <RefreshCw size={16} />
           </button>
         </div>
       </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Application Trends */}
+        <ChartCard title="Application Trends" className="lg:col-span-2">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex space-x-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                  <span
+                    className={`text-sm ${
+                      isDarkMode ? "text-gray-300" : "text-gray-600"
+                    }`}
+                  >
+                    Submitted
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-green-500 rounded"></div>
+                  <span
+                    className={`text-sm ${
+                      isDarkMode ? "text-gray-300" : "text-gray-600"
+                    }`}
+                  >
+                    Approved
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-red-500 rounded"></div>
+                  <span
+                    className={`text-sm ${
+                      isDarkMode ? "text-gray-300" : "text-gray-600"
+                    }`}
+                  >
+                    Rejected
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="h-64 flex items-end justify-between space-x-2">
+              {analyticsData.applicationTrends.map((month, index) => (
+                <div
+                  key={index}
+                  className="flex-1 flex flex-col items-center space-y-2"
+                >
+                  <div className="flex flex-col space-y-1 w-full">
+                    <div
+                      className="bg-blue-500 rounded-t"
+                      style={{ height: `${(month.submitted / 50) * 200}px` }}
+                    ></div>
+                    <div
+                      className="bg-green-500"
+                      style={{ height: `${(month.approved / 50) * 200}px` }}
+                    ></div>
+                    <div
+                      className="bg-red-500 rounded-b"
+                      style={{ height: `${(month.rejected / 50) * 200}px` }}
+                    ></div>
+                  </div>
+                  <span
+                    className={`text-xs ${
+                      isDarkMode ? "text-gray-400" : "text-gray-500"
+                    }`}
+                  >
+                    {month.month}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </ChartCard>
+
+        {/* Committee Performance */}
+        <ChartCard title="Committee Performance">
+          <div className="space-y-4">
+            {analyticsData.committeePerformance.map((committee, index) => (
+              <div
+                key={index}
+                className={`p-3 rounded-lg border ${
+                  isDarkMode
+                    ? "border-gray-600 bg-gray-700"
+                    : "border-gray-200 bg-gray-50"
+                }`}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h4
+                    className={`font-semibold text-sm ${
+                      isDarkMode ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    {committee.name}
+                  </h4>
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${
+                      committee.approvalRate >= 80
+                        ? "bg-green-100 text-green-800"
+                        : committee.approvalRate >= 70
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {committee.approvalRate}%
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span
+                      className={isDarkMode ? "text-gray-300" : "text-gray-600"}
+                    >
+                      Applications: {committee.applications}
+                    </span>
+                    <span
+                      className={isDarkMode ? "text-gray-300" : "text-gray-600"}
+                    >
+                      Avg Time: {committee.avgTime} days
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full"
+                      style={{
+                        width: `${(committee.applications / 50) * 100}%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ChartCard>
+
+        {/* Category Distribution */}
+        <ChartCard title="Research Categories">
+          <div className="space-y-4">
+            {analyticsData.categoryDistribution.map((category, index) => (
+              <div key={index} className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div
+                    className="w-4 h-4 rounded"
+                    style={{
+                      backgroundColor: `hsl(${index * 90}, 70%, 50%)`,
+                    }}
+                  ></div>
+                  <span
+                    className={`text-sm ${
+                      isDarkMode ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    {category.category}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-20 bg-gray-200 rounded-full h-2">
+                    <div
+                      className="h-2 rounded-full"
+                      style={{
+                        width: `${category.percentage}%`,
+                        backgroundColor: `hsl(${index * 90}, 70%, 50%)`,
+                      }}
+                    ></div>
+                  </div>
+                  <span
+                    className={`text-sm font-medium ${
+                      isDarkMode ? "text-gray-300" : "text-gray-600"
+                    }`}
+                  >
+                    {category.percentage}%
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ChartCard>
+      </div>
+
+      {/* Detailed Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Processing Times */}
+        <ChartCard title="Processing Times Trend">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span
+                className={`text-sm ${
+                  isDarkMode ? "text-gray-300" : "text-gray-600"
+                }`}
+              >
+                Average days to process
+              </span>
+              <span className="text-lg font-bold text-blue-600">
+                {stats.averageProcessingTime}
+              </span>
+            </div>
+            <MiniChart
+              data={analyticsData.processingTimes.map((pt) =>
+                parseFloat(pt.averageDays)
+              )}
+              color="#3B82F6"
+              height={120}
+            />
+            <div className="space-y-2">
+              {analyticsData.processingTimes.slice(-3).map((pt, index) => (
+                <div key={index} className="flex justify-between text-xs">
+                  <span
+                    className={isDarkMode ? "text-gray-400" : "text-gray-500"}
+                  >
+                    {pt.month}
+                  </span>
+                  <span
+                    className={isDarkMode ? "text-gray-300" : "text-gray-600"}
+                  >
+                    {pt.averageDays} days
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </ChartCard>
+
+        {/* User Growth */}
+        <ChartCard title="User Growth">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span
+                className={`text-sm ${
+                  isDarkMode ? "text-gray-300" : "text-gray-600"
+                }`}
+              >
+                New users this month
+              </span>
+              <span className="text-lg font-bold text-green-600">
+                {analyticsData.userGrowth[analyticsData.userGrowth.length - 1]
+                  ?.newUsers || 0}
+              </span>
+            </div>
+            <MiniChart
+              data={analyticsData.userGrowth.map((ug) => ug.newUsers)}
+              color="#10B981"
+              height={120}
+            />
+            <div className="space-y-2">
+              {analyticsData.userGrowth.slice(-3).map((ug, index) => (
+                <div key={index} className="flex justify-between text-xs">
+                  <span
+                    className={isDarkMode ? "text-gray-400" : "text-gray-500"}
+                  >
+                    {ug.month}
+                  </span>
+                  <span
+                    className={isDarkMode ? "text-gray-300" : "text-gray-600"}
+                  >
+                    +{ug.newUsers} users
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </ChartCard>
+
+        {/* Quick Insights */}
+        <ChartCard title="Quick Insights">
+          <div className="space-y-4">
+            <div
+              className={`p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] ${
+                isDarkMode
+                  ? "bg-white/5 border border-white/10 hover:bg-white/8"
+                  : "bg-gray-50/80 border border-gray-200/60 hover:bg-gray-100/80"
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <TrendingUp className="w-4 h-4 text-green-600" />
+                <span
+                  className={`text-sm font-medium ${
+                    isDarkMode ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Approval rate increased by 5.2%
+                </span>
+              </div>
+              <p
+                className={`text-xs mt-1 ${
+                  isDarkMode ? "text-gray-300" : "text-gray-600"
+                }`}
+              >
+                Compared to last month
+              </p>
+            </div>
+
+            <div
+              className={`p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] ${
+                isDarkMode
+                  ? "bg-white/5 border border-white/10 hover:bg-white/8"
+                  : "bg-gray-50/80 border border-gray-200/60 hover:bg-gray-100/80"
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Clock className="w-4 h-4 text-blue-600" />
+                <span
+                  className={`text-sm font-medium ${
+                    isDarkMode ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Processing time reduced by 0.8 days
+                </span>
+              </div>
+              <p
+                className={`text-xs mt-1 ${
+                  isDarkMode ? "text-gray-300" : "text-gray-600"
+                }`}
+              >
+                Average across all committees
+              </p>
+            </div>
+
+            <div
+              className={`p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] ${
+                isDarkMode
+                  ? "bg-white/5 border border-white/10 hover:bg-white/8"
+                  : "bg-gray-50/80 border border-gray-200/60 hover:bg-gray-100/80"
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Users className="w-4 h-4 text-purple-600" />
+                <span
+                  className={`text-sm font-medium ${
+                    isDarkMode ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  {stats.activeUsers} active users
+                </span>
+              </div>
+              <p
+                className={`text-xs mt-1 ${
+                  isDarkMode ? "text-gray-300" : "text-gray-600"
+                }`}
+              >
+                {Math.round((stats.activeUsers / stats.totalUsers) * 100)}% of
+                total users
+              </p>
+            </div>
+          </div>
+        </ChartCard>
+      </div>
+
+      {/* Export Section */}
+      <div className="liquid-card p-6 rounded-xl transition-all duration-500 ease-out transform hover:scale-[1.01] hover:shadow-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3
+              className={`text-lg font-semibold mb-1 transition-all duration-300 ${
+                isDarkMode ? "text-white" : "text-gray-900"
+              }`}
+            >
+              Export Analytics
+            </h3>
+            <p
+              className={`text-sm transition-all duration-300 ${
+                isDarkMode ? "text-gray-300" : "text-gray-600"
+              }`}
+            >
+              Download detailed reports and insights
+            </p>
+          </div>
+          <div className="flex space-x-3">
+            <button
+              className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 transform hover:scale-105 ${
+                isDarkMode
+                  ? "bg-white/10 text-white hover:bg-white/15 border border-white/20"
+                  : "bg-gray-100/80 text-gray-700 hover:bg-gray-200/80 border border-gray-200/60"
+              }`}
+            >
+              <Download size={16} />
+              <span>Export PDF</span>
+            </button>
+            <button
+              className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 transform hover:scale-105 ${
+                isDarkMode
+                  ? "bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10"
+                  : "bg-gray-50/60 text-gray-600 hover:bg-gray-100/60 border border-gray-200/40"
+              }`}
+            >
+              <Download size={16} />
+              <span>Export CSV</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="mb-6">
+        <h1
+          className={`text-2xl font-bold mb-1 ${
+            isDarkMode ? "text-white" : "text-black"
+          }`}
+        >
+          Dashboard Overview
+        </h1>
+        <p
+          className={`text-sm ${
+            isDarkMode ? "text-gray-300" : "text-gray-600"
+          }`}
+        >
+          Welcome back! Here's what's happening with your ERC system.
+        </p>
+      </div>
+
+      {/* Tab Navigation */}
+      <div
+        className={`flex space-x-1 p-1.5 rounded-xl w-fit transition-all duration-300 ${
+          isDarkMode
+            ? "bg-gray-800/50 border border-gray-700/50 backdrop-blur-sm"
+            : "bg-gray-100/80 border border-gray-200/50 backdrop-blur-sm"
+        }`}
+      >
+        <button
+          onClick={() => setActiveTab("overview")}
+          className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
+            activeTab === "overview"
+              ? isDarkMode
+                ? "bg-gradient-to-r from-blue-600/90 to-blue-700/90 text-white shadow-lg border border-blue-500/30"
+                : "bg-gradient-to-r from-blue-600/90 to-blue-700/90 text-white shadow-lg border border-blue-500/30"
+              : isDarkMode
+              ? "text-gray-300 hover:text-white hover:bg-gray-700/50 border border-transparent hover:border-gray-600/50"
+              : "text-gray-600 hover:text-gray-900 hover:bg-white/80 border border-transparent hover:border-gray-300/50"
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setActiveTab("analytics")}
+          className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
+            activeTab === "analytics"
+              ? isDarkMode
+                ? "bg-gradient-to-r from-blue-600/90 to-blue-700/90 text-white shadow-lg border border-blue-500/30"
+                : "bg-gradient-to-r from-blue-600/90 to-blue-700/90 text-white shadow-lg border border-blue-500/30"
+              : isDarkMode
+              ? "text-gray-300 hover:text-white hover:bg-gray-700/50 border border-transparent hover:border-gray-600/50"
+              : "text-gray-600 hover:text-gray-900 hover:bg-white/80 border border-transparent hover:border-gray-300/50"
+          }`}
+        >
+          Analytics
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "overview" ? renderOverviewTab() : renderAnalyticsTab()}
     </div>
   );
 };
 
 export default DashboardOverview;
+
+{/* Custom CSS for enhanced tab styling */}
+<style jsx>{`
+  .tab-container {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 6px;
+  }
+
+  .dark .tab-container {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .tab-button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .tab-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .tab-button:hover::before {
+    left: 100%;
+  }
+
+  .tab-button.active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(37, 99, 235, 0.9));
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+  }
+
+  .tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.8), rgba(37, 99, 235, 0.8));
+    border-radius: 1px;
+  }
+
+  .dark .tab-button.active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(37, 99, 235, 0.8));
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+  }
+
+  .tab-button:not(.active) {
+    background: transparent;
+    border: 1px solid transparent;
+  }
+
+  .tab-button:not(.active):hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .dark .tab-button:not(.active):hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+`}</style>

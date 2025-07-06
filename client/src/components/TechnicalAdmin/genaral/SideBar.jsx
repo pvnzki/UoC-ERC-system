@@ -1,5 +1,6 @@
 // Update components/TechnicalAdmin/genaral/SideBar.jsx
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ChevronLeft,
@@ -18,6 +19,7 @@ import {
   Users2,
   Clock,
   TrendingUp,
+  UserPlus,
 } from "lucide-react";
 import { useTheme } from "../../../context/theme/ThemeContext";
 
@@ -25,6 +27,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const { isDarkMode } = useTheme();
   const [hoveredItem, setHoveredItem] = useState(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -35,11 +38,110 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     return () => clearTimeout(timer);
   }, [isCollapsed]);
 
+  // Portal Tooltip Component
+  const PortalTooltip = ({ item, isVisible, position }) => {
+    if (!isVisible || !item) return null;
+
+    return createPortal(
+      <div
+        className={`fixed backdrop-blur-2xl rounded-xl shadow-lg z-[9999] border transition-all duration-300 ease-out ${
+          isDarkMode
+            ? "bg-white/3 border-white/6 text-white/85"
+            : "bg-white/25 border-white/20 text-gray-800"
+        }`}
+        style={{
+          left: position.x,
+          top: position.y,
+          transform: "translateY(-50%)",
+          backdropFilter: "blur(20px) saturate(150%)",
+          WebkitBackdropFilter: "blur(20px) saturate(150%)",
+          boxShadow: isDarkMode
+            ? "0 8px 32px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.04)"
+            : "0 8px 32px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.4)",
+        }}
+      >
+        {/* Ultra-subtle glassmorphic overlay */}
+        <div
+          className={`absolute inset-0 rounded-xl ${
+            isDarkMode
+              ? "bg-gradient-to-br from-white/2 to-transparent"
+              : "bg-gradient-to-br from-white/10 to-transparent"
+          }`}
+        />
+
+        {/* Compact tooltip content */}
+        <div className="relative z-10 px-3 py-2">
+          {/* Compact header with small icon */}
+          <div className="flex items-center gap-2">
+            <div
+              className={`p-1.5 rounded-lg ${
+                isDarkMode
+                  ? "bg-white/4 text-white/75"
+                  : "bg-white/20 text-gray-600"
+              }`}
+            >
+              {React.cloneElement(item.icon, { size: 14 })}
+            </div>
+            <div
+              className={`font-medium text-sm ${
+                isDarkMode ? "text-white/85" : "text-gray-800"
+              }`}
+            >
+              {item.label}
+            </div>
+          </div>
+
+          {/* Compact description */}
+          <div
+            className={`text-xs mt-1 ${
+              isDarkMode ? "text-white/65" : "text-gray-600"
+            }`}
+          >
+            {item.description}
+          </div>
+
+          {/* Compact logout indicator */}
+          {item.id === "logout" && (
+            <div
+              className={`mt-1 flex items-center gap-1.5 text-xs ${
+                isDarkMode ? "text-red-300" : "text-red-500"
+              }`}
+            >
+              <div
+                className={`w-1.5 h-1.5 rounded-full ${
+                  isDarkMode ? "bg-red-400/40" : "bg-red-500/40"
+                }`}
+                style={{
+                  animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                }}
+              />
+              <span className="font-medium">Sign out</span>
+            </div>
+          )}
+        </div>
+
+        {/* Ultra-transparent liquid glass arrow */}
+        <div
+          className={`absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 rotate-45 ${
+            isDarkMode
+              ? "bg-white/3 border-l border-b border-white/6"
+              : "bg-white/25 border-l border-b border-white/20"
+          }`}
+          style={{
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+          }}
+        />
+      </div>,
+      document.body
+    );
+  };
+
   const menuItems = [
     {
       id: "dashboard",
       label: "Dashboard",
-      icon: <Home size={20} />,
+      icon: <BarChart3 size={20} />,
       description: "Overview and analytics",
       path: "/Technical-Admin",
     },
@@ -47,36 +149,29 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       id: "applications",
       label: "Applications",
       icon: <FileText size={20} />,
-      description: "Manage applications",
+      description: "Review and manage applications",
       path: "/Technical-Admin/applications",
     },
     {
       id: "committees",
-      label: "Committee Management",
-      icon: <Users2 size={20} />,
-      description: "Committee settings",
+      label: "Committees",
+      icon: <Users size={20} />,
+      description: "Manage committees and members",
       path: "/Technical-Admin/committees",
     },
     {
       id: "users",
-      label: "User Management",
-      icon: <UserCheck size={20} />,
-      description: "User administration",
+      label: "Users",
+      icon: <UserPlus size={20} />,
+      description: "Manage system users",
       path: "/Technical-Admin/users",
     },
     {
       id: "meetings",
-      label: "Meeting Management",
+      label: "Meetings",
       icon: <Clock size={20} />,
       description: "Schedule and manage meetings",
       path: "/Technical-Admin/meetings",
-    },
-    {
-      id: "analytics",
-      label: "Analytics",
-      icon: <TrendingUp size={20} />,
-      description: "Reports and insights",
-      path: "/Technical-Admin/analytics",
     },
   ];
 
@@ -114,6 +209,28 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     setIsCollapsed(!isCollapsed);
   };
 
+  const handleMouseEnter = (item, event) => {
+    console.log("Mouse enter:", item.id);
+    setHoveredItem(item.id);
+    if (isCollapsed) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      console.log("Button rect:", rect);
+      setTooltipPosition({
+        x: rect.right + 10,
+        y: rect.top + rect.height / 2,
+      });
+      console.log("Tooltip position:", {
+        x: rect.right + 10,
+        y: rect.top + rect.height / 2,
+      });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    console.log("Mouse leave");
+    setHoveredItem(null);
+  };
+
   // Function to check if a menu item is active
   const isActive = (path) => {
     if (path === "/Technical-Admin") {
@@ -122,11 +239,15 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     return location.pathname.startsWith(path);
   };
 
+  // Debug hover state
+  console.log("Current hovered item:", hoveredItem);
+  console.log("Is collapsed:", isCollapsed);
+
   return (
     <div
       className={`${
         isCollapsed ? "w-21" : "w-64"
-      } h-full transition-all duration-700 ease-out shadow-2xl border-r relative overflow-hidden ${
+      } h-full transition-all duration-700 ease-out shadow-2xl border-r relative overflow-visible ${
         isDarkMode
           ? "bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 border-gray-700"
           : "bg-gradient-to-b from-white via-gray-50 to-white border-gray-200"
@@ -136,50 +257,48 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         WebkitBackdropFilter: "blur(10px)",
       }}
     >
-      {/* Header Section with enhanced styling */}
-      <div
-        className={`p-2 border-b transition-all duration-500 ease-out ${
-          isDarkMode ? "border-gray-700/50" : "border-gray-200/50"
+      {/* Subtle Bookmark-style Expand/Collapse Button */}
+      <button
+        onClick={handleToggleCollapse}
+        className={`absolute -right-1 top-1/2 transform -translate-y-1/2 z-40 p-1.5 rounded-l-md transition-all duration-300 ease-out hover:scale-105 focus:outline-none focus:ring-1 focus:ring-blue-400/30 ${
+          isDarkMode
+            ? "bg-gray-800/80 hover:bg-gray-700/90 text-gray-400 hover:text-gray-200 border border-gray-700/50 hover:border-gray-600/50"
+            : "bg-gray-100/80 hover:bg-gray-200/90 text-gray-500 hover:text-gray-700 border border-gray-300/50 hover:border-gray-400/50"
         }`}
+        title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        style={{
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+        }}
       >
-        <button
-          onClick={handleToggleCollapse}
-          className={`p-1.5 rounded-xl transition-all duration-500 ease-out hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-400/40 transform ${
-            isDarkMode
-              ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white shadow-lg hover:shadow-xl"
-              : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white shadow-lg hover:shadow-xl"
+        <div
+          className={`transition-all duration-300 ease-out transform ${
+            isCollapsed ? "rotate-180" : "rotate-0"
           }`}
-          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <div
-            className={`transition-all duration-500 ease-out transform ${
-              isCollapsed ? "rotate-180" : "rotate-0"
-            }`}
-          >
-            <ChevronLeft size={16} />
-          </div>
-        </button>
-      </div>
+          <ChevronLeft size={12} />
+        </div>
+      </button>
 
       {/* Navigation Menu with enhanced animations */}
-      <nav className="flex-1 pt-2 px-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
-        <div className={`mb-2 ${!isCollapsed ? "mb-4" : ""}`}>
+      <nav className="flex-1 pt-6 px-3 overflow-y-auto overflow-x-visible scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
+        <div className={`mb-4 ${!isCollapsed ? "mb-6" : ""}`}>
           <h3
-            className={`text-xs font-semibold uppercase tracking-wider mb-2 transition-all duration-500 ease-out ${
+            className={`text-xs font-semibold uppercase tracking-wider mb-3 transition-all duration-500 ease-out ${
               isCollapsed ? "opacity-0 scale-95" : "opacity-100 scale-100"
-            } ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}
+            } ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}
           >
             Main Navigation
           </h3>
         </div>
 
-        <ul className={`space-y-1 ${!isCollapsed ? "space-y-2" : ""}`}>
+        <ul className={`space-y-3 ${!isCollapsed ? "space-y-2" : ""}`}>
           {menuItems.map((item, index) => (
             <li key={item.id} className="relative">
               <button
                 onClick={() => handleNavigation(item.path)}
-                onMouseEnter={() => setHoveredItem(item.id)}
-                onMouseLeave={() => setHoveredItem(null)}
+                onMouseEnter={(e) => handleMouseEnter(item, e)}
+                onMouseLeave={handleMouseLeave}
                 className={`w-full flex items-center rounded-xl transition-all duration-300 ease-out relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-blue-400/40 transform hover:scale-[1.03] hover:shadow-lg ${
                   isActive(item.path)
                     ? isDarkMode
@@ -187,8 +306,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                       : "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg"
                     : isDarkMode
                     ? "text-gray-300 hover:bg-gray-800/90 hover:text-white hover:shadow-lg"
-                    : "text-gray-700 hover:bg-gray-100/90 hover:text-gray-900 hover:shadow-lg"
-                } ${isCollapsed ? "px-3 py-2" : "px-3 py-3"}`}
+                    : "text-gray-900 hover:bg-blue-50/90 hover:text-blue-900 hover:shadow-lg"
+                } ${isCollapsed ? "px-4 py-3" : "px-3 py-3"}`}
                 title={isCollapsed ? item.description : undefined}
                 style={{
                   animationDelay: `${index * 50}ms`,
@@ -200,12 +319,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                     className={`absolute left-0 top-0 bottom-0 w-1 rounded-r-full transition-all duration-500 ease-out ${
                       isDarkMode
                         ? "bg-blue-400 shadow-lg"
-                        : "bg-blue-300 shadow-lg"
+                        : "bg-blue-500 shadow-lg"
                     }`}
                     style={{
                       boxShadow: isDarkMode
                         ? "0 0 10px rgba(96, 165, 250, 0.5)"
-                        : "0 0 10px rgba(59, 130, 246, 0.3)",
+                        : "0 0 10px rgba(59, 130, 246, 0.4)",
                     }}
                   />
                 )}
@@ -230,7 +349,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                         ? "bg-white"
                         : isDarkMode
                         ? "bg-blue-400"
-                        : "bg-blue-300"
+                        : "bg-blue-400"
                     }`}
                     style={{
                       filter: "blur(8px)",
@@ -248,7 +367,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                         ? "bg-white"
                         : isDarkMode
                         ? "bg-blue-400"
-                        : "bg-blue-300"
+                        : "bg-blue-400"
                     }`}
                     style={{
                       transform: "scale(1.2)",
@@ -270,138 +389,115 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                 {/* Enhanced hover highlight effect */}
                 <span
                   className={`absolute left-0 top-0 w-full h-full opacity-0 group-hover:opacity-15 transition-all duration-300 ease-out ${
-                    isDarkMode ? "bg-blue-400" : "bg-blue-300"
+                    isDarkMode ? "bg-blue-400" : "bg-blue-400"
                   }`}
                 />
               </button>
 
-              {/* Enhanced tooltip for collapsed state */}
+              {/* Ultra-transparent glassmorphic fallback tooltip */}
               {isCollapsed && hoveredItem === item.id && (
                 <div
-                  className={`absolute left-full ml-3 px-5 py-4 rounded-2xl shadow-2xl z-50 whitespace-nowrap transition-all duration-400 ease-out transform backdrop-blur-2xl ${
-                    isActive(item.path)
-                      ? isDarkMode
-                        ? "bg-gradient-to-br from-blue-900/20 via-blue-800/25 to-blue-700/20 text-white border border-blue-500/30 shadow-blue-500/40"
-                        : "bg-gradient-to-br from-blue-50/90 via-blue-100/85 to-blue-200/80 text-blue-900 border border-blue-300/40 shadow-blue-500/30"
-                      : isDarkMode
-                      ? "bg-gradient-to-br from-gray-900/20 via-gray-800/25 to-gray-700/20 text-white border border-gray-600/30 shadow-gray-900/60"
-                      : "bg-gradient-to-br from-white/90 via-gray-50/85 to-gray-100/80 text-gray-900 border border-gray-200/40 shadow-gray-900/30"
+                  className={`absolute backdrop-blur-2xl rounded-xl shadow-lg z-[9999] border transition-all duration-300 ease-out ${
+                    isDarkMode
+                      ? "bg-white/3 border-white/6 text-white/85"
+                      : "bg-white/25 border-white/20 text-gray-800"
                   }`}
                   style={{
-                    animation: "slideInRight 0.4s ease-out",
-                    boxShadow: isActive(item.path)
-                      ? isDarkMode
-                        ? "0 25px 50px -12px rgba(59, 130, 246, 0.4), 0 0 0 1px rgba(59, 130, 246, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-                        : "0 25px 50px -12px rgba(59, 130, 246, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9)"
-                      : isDarkMode
-                      ? "0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.05)"
-                      : "0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.9)",
-                    backdropFilter: "blur(20px) saturate(180%)",
-                    WebkitBackdropFilter: "blur(20px) saturate(180%)",
+                    left: "100%",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    marginLeft: "8px",
+                    whiteSpace: "nowrap",
+                    backdropFilter: "blur(20px) saturate(150%)",
+                    WebkitBackdropFilter: "blur(20px) saturate(150%)",
+                    boxShadow: isDarkMode
+                      ? "0 8px 32px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.04)"
+                      : "0 8px 32px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.4)",
                   }}
                 >
-                  {/* Glassmorphic background overlay */}
+                  {/* Ultra-subtle glassmorphic overlay */}
                   <div
-                    className={`absolute inset-0 rounded-2xl ${
-                      isActive(item.path)
-                        ? isDarkMode
-                          ? "bg-gradient-to-br from-blue-600/10 to-blue-400/5"
-                          : "bg-gradient-to-br from-blue-400/10 to-blue-300/5"
-                        : isDarkMode
-                        ? "bg-gradient-to-br from-gray-600/10 to-gray-400/5"
-                        : "bg-gradient-to-br from-gray-400/10 to-gray-300/5"
+                    className={`absolute inset-0 rounded-xl ${
+                      isDarkMode
+                        ? "bg-gradient-to-br from-white/2 to-transparent"
+                        : "bg-gradient-to-br from-white/10 to-transparent"
                     }`}
                   />
 
-                  {/* Tooltip header with icon */}
-                  <div className="flex items-center gap-3 mb-3 relative z-10">
-                    <span
-                      className={`p-2 rounded-xl transition-all duration-300 ${
-                        isActive(item.path)
-                          ? isDarkMode
-                            ? "bg-gradient-to-br from-blue-600/40 to-blue-500/30 text-blue-200 shadow-lg shadow-blue-500/30 backdrop-blur-sm"
-                            : "bg-gradient-to-br from-blue-600/30 to-blue-500/20 text-blue-700 shadow-lg shadow-blue-500/20 backdrop-blur-sm"
-                          : isDarkMode
-                          ? "bg-gradient-to-br from-gray-700/40 to-gray-600/30 text-gray-200 shadow-lg shadow-gray-500/20 backdrop-blur-sm"
-                          : "bg-gradient-to-br from-gray-200/60 to-gray-100/50 text-gray-600 shadow-lg shadow-gray-400/20 backdrop-blur-sm"
-                      }`}
-                    >
-                      {item.icon}
-                    </span>
-                    <div
-                      className={`font-bold text-sm tracking-wide ${
-                        isActive(item.path)
-                          ? isDarkMode
-                            ? "text-blue-100"
-                            : "text-blue-800"
-                          : isDarkMode
-                          ? "text-white"
-                          : "text-gray-900"
-                      }`}
-                    >
-                      {item.label}
-                    </div>
-                  </div>
-
-                  {/* Tooltip description */}
-                  <div
-                    className={`text-xs leading-relaxed relative z-10 ${
-                      isActive(item.path)
-                        ? isDarkMode
-                          ? "text-blue-200"
-                          : "text-blue-700"
-                        : isDarkMode
-                        ? "text-gray-300"
-                        : "text-gray-600"
-                    }`}
-                  >
-                    {item.description}
-                  </div>
-
-                  {/* Status indicator for active items */}
-                  {isActive(item.path) && (
-                    <div
-                      className={`mt-3 flex items-center gap-2 text-xs relative z-10 ${
-                        isDarkMode ? "text-blue-300" : "text-blue-600"
-                      }`}
-                    >
+                  {/* Compact tooltip content */}
+                  <div className="relative z-10 px-3 py-2">
+                    {/* Compact header with small icon */}
+                    <div className="flex items-center gap-2">
                       <div
-                        className={`w-2.5 h-2.5 rounded-full ${
-                          isDarkMode ? "bg-blue-400" : "bg-blue-600"
-                        } ${
-                          hoveredItem === item.id ? "animate-pulse" : ""
-                        } shadow-lg shadow-blue-500/50`}
-                      ></div>
-                      <span className="font-semibold tracking-wide">
-                        Active
-                      </span>
+                        className={`p-1.5 rounded-lg ${
+                          isDarkMode
+                            ? "bg-white/4 text-white/75"
+                            : "bg-white/20 text-gray-600"
+                        }`}
+                      >
+                        {React.cloneElement(item.icon, { size: 14 })}
+                      </div>
+                      <div
+                        className={`font-medium text-sm ${
+                          isDarkMode ? "text-white/85" : "text-gray-800"
+                        }`}
+                      >
+                        {item.label}
+                      </div>
                     </div>
-                  )}
 
-                  {/* Tooltip arrow with enhanced glassmorphic styling */}
+                    {/* Compact description */}
+                    <div
+                      className={`text-xs mt-1 ${
+                        isDarkMode ? "text-white/65" : "text-gray-600"
+                      }`}
+                    >
+                      {item.description}
+                    </div>
+
+                    {/* Compact logout indicator */}
+                    {item.id === "logout" && (
+                      <div
+                        className={`mt-1 flex items-center gap-1.5 text-xs ${
+                          isDarkMode ? "text-red-300" : "text-red-500"
+                        }`}
+                      >
+                        <div
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            isDarkMode ? "bg-red-400/40" : "bg-red-500/40"
+                          }`}
+                          style={{
+                            animation:
+                              "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                          }}
+                        />
+                        <span className="font-medium">Sign out</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ultra-transparent liquid glass arrow */}
                   <div
-                    className={`absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-4 h-4 rotate-45 ${
-                      isActive(item.path)
-                        ? isDarkMode
-                          ? "bg-gradient-to-br from-blue-900/20 to-blue-800/20 border-l border-b border-blue-500/30"
-                          : "bg-gradient-to-br from-blue-50/90 to-blue-100/80 border-l border-b border-blue-300/40"
-                        : isDarkMode
-                        ? "bg-gradient-to-br from-gray-900/20 to-gray-800/20 border-l border-b border-gray-600/30"
-                        : "bg-gradient-to-br from-white/90 to-gray-50/80 border-l border-b border-gray-200/40"
+                    className={`absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 rotate-45 ${
+                      isDarkMode
+                        ? "bg-white/3 border-l border-b border-white/6"
+                        : "bg-white/25 border-l border-b border-white/20"
                     }`}
                     style={{
                       backdropFilter: "blur(20px)",
                       WebkitBackdropFilter: "blur(20px)",
-                      boxShadow: isActive(item.path)
-                        ? isDarkMode
-                          ? "-3px 3px 6px rgba(59, 130, 246, 0.3)"
-                          : "-3px 3px 6px rgba(59, 130, 246, 0.2)"
-                        : isDarkMode
-                        ? "-3px 3px 6px rgba(0, 0, 0, 0.2)"
-                        : "-3px 3px 6px rgba(0, 0, 0, 0.1)",
                     }}
                   />
                 </div>
+              )}
+
+              {/* Portal Tooltip */}
+              {isCollapsed && hoveredItem === item.id && (
+                <PortalTooltip
+                  item={item}
+                  isVisible={true}
+                  position={tooltipPosition}
+                />
               )}
             </li>
           ))}
@@ -414,23 +510,23 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           isDarkMode ? "border-gray-700/50" : "border-gray-200/50"
         }`}
       >
-        <div className={`mb-2 ${!isCollapsed ? "mb-4" : ""}`}>
+        <div className={`mb-4 ${!isCollapsed ? "mb-6" : ""}`}>
           <h3
-            className={`text-xs font-semibold uppercase tracking-wider mb-2 transition-all duration-500 ease-out ${
+            className={`text-xs font-semibold uppercase tracking-wider mb-3 transition-all duration-500 ease-out ${
               isCollapsed ? "opacity-0 scale-95" : "opacity-100 scale-100"
-            } ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}
+            } ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}
           >
             System
           </h3>
         </div>
 
-        <ul className={`space-y-1 ${!isCollapsed ? "space-y-2" : ""}`}>
+        <ul className={`space-y-3 ${!isCollapsed ? "space-y-2" : ""}`}>
           {bottomMenuItems.map((item, index) => (
             <li key={item.id} className="relative">
               <button
                 onClick={item.id === "logout" ? handleLogout : () => {}}
-                onMouseEnter={() => setHoveredItem(item.id)}
-                onMouseLeave={() => setHoveredItem(null)}
+                onMouseEnter={(e) => handleMouseEnter(item, e)}
+                onMouseLeave={handleMouseLeave}
                 className={`w-full flex items-center rounded-xl transition-all duration-500 ease-out relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-blue-400/40 transform hover:scale-[1.02] ${
                   item.id === "logout"
                     ? isDarkMode
@@ -438,8 +534,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                       : "text-red-600 hover:bg-red-50/80 hover:text-red-700 hover:shadow-md"
                     : isDarkMode
                     ? "text-gray-300 hover:bg-gray-800/80 hover:text-white hover:shadow-md"
-                    : "text-gray-700 hover:bg-gray-100/80 hover:text-gray-900 hover:shadow-md"
-                } ${isCollapsed ? "px-3 py-2" : "px-3 py-3"}`}
+                    : "text-gray-800 hover:bg-gray-100/80 hover:text-gray-900 hover:shadow-md"
+                } ${isCollapsed ? "px-4 py-3" : "px-3 py-3"}`}
                 title={isCollapsed ? item.description : undefined}
                 style={{
                   animationDelay: `${index * 50}ms`,
@@ -465,124 +561,118 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                     item.id === "logout"
                       ? isDarkMode
                         ? "bg-red-400"
-                        : "bg-red-300"
+                        : "bg-red-400"
                       : isDarkMode
                       ? "bg-blue-400"
-                      : "bg-blue-300"
+                      : "bg-blue-400"
                   }`}
                 />
               </button>
 
-              {/* Enhanced tooltip for collapsed state */}
+              {/* Ultra-transparent glassmorphic fallback tooltip for bottom items */}
               {isCollapsed && hoveredItem === item.id && (
                 <div
-                  className={`absolute left-full ml-3 px-4 py-3 rounded-xl shadow-2xl z-50 whitespace-nowrap transition-all duration-300 ease-out transform backdrop-blur-xl ${
-                    item.id === "logout"
-                      ? isDarkMode
-                        ? "bg-gradient-to-br from-red-900/95 to-red-800/95 text-white border border-red-600/50 shadow-red-500/30"
-                        : "bg-gradient-to-br from-red-50/95 to-red-100/95 text-red-900 border border-red-300/50 shadow-red-500/20"
-                      : isDarkMode
-                      ? "bg-gradient-to-br from-gray-900/95 to-gray-800/95 text-white border border-gray-600/50 shadow-gray-900/50"
-                      : "bg-gradient-to-br from-white/95 to-gray-50/95 text-gray-900 border border-gray-200/50 shadow-gray-900/20"
+                  className={`absolute backdrop-blur-2xl rounded-xl shadow-lg z-[9999] border transition-all duration-300 ease-out ${
+                    isDarkMode
+                      ? "bg-white/3 border-white/6 text-white/85"
+                      : "bg-white/25 border-white/20 text-gray-800"
                   }`}
                   style={{
-                    animation: "slideInRight 0.3s ease-out",
-                    boxShadow:
-                      item.id === "logout"
-                        ? isDarkMode
-                          ? "0 20px 25px -5px rgba(239, 68, 68, 0.3), 0 10px 10px -5px rgba(239, 68, 68, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-                          : "0 20px 25px -5px rgba(239, 68, 68, 0.2), 0 10px 10px -5px rgba(239, 68, 68, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8)"
-                        : isDarkMode
-                        ? "0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05)"
-                        : "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8)",
+                    left: "100%",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    marginLeft: "8px",
+                    whiteSpace: "nowrap",
+                    backdropFilter: "blur(20px) saturate(150%)",
+                    WebkitBackdropFilter: "blur(20px) saturate(150%)",
+                    boxShadow: isDarkMode
+                      ? "0 8px 32px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.04)"
+                      : "0 8px 32px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.4)",
                   }}
                 >
-                  {/* Tooltip header with icon */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <span
-                      className={`p-1.5 rounded-lg transition-all duration-300 ${
-                        item.id === "logout"
-                          ? isDarkMode
-                            ? "bg-red-600/30 text-red-300 shadow-lg shadow-red-500/20"
-                            : "bg-red-600/20 text-red-700 shadow-lg shadow-red-500/10"
-                          : isDarkMode
-                          ? "bg-gray-700/50 text-gray-300"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {item.icon}
-                    </span>
-                    <div
-                      className={`font-bold text-sm ${
-                        item.id === "logout"
-                          ? isDarkMode
-                            ? "text-red-100"
-                            : "text-red-800"
-                          : isDarkMode
-                          ? "text-white"
-                          : "text-gray-900"
-                      }`}
-                    >
-                      {item.label}
-                    </div>
-                  </div>
-
-                  {/* Tooltip description */}
+                  {/* Ultra-subtle glassmorphic overlay */}
                   <div
-                    className={`text-xs leading-relaxed ${
-                      item.id === "logout"
-                        ? isDarkMode
-                          ? "text-red-200"
-                          : "text-red-700"
-                        : isDarkMode
-                        ? "text-gray-300"
-                        : "text-gray-600"
+                    className={`absolute inset-0 rounded-xl ${
+                      isDarkMode
+                        ? "bg-gradient-to-br from-white/2 to-transparent"
+                        : "bg-gradient-to-br from-white/10 to-transparent"
                     }`}
-                  >
-                    {item.description}
-                  </div>
+                  />
 
-                  {/* Special styling for logout */}
-                  {item.id === "logout" && (
+                  {/* Compact tooltip content */}
+                  <div className="relative z-10 px-3 py-2">
+                    {/* Compact header with small icon */}
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`p-1.5 rounded-lg ${
+                          isDarkMode
+                            ? "bg-white/4 text-white/75"
+                            : "bg-white/20 text-gray-600"
+                        }`}
+                      >
+                        {React.cloneElement(item.icon, { size: 14 })}
+                      </div>
+                      <div
+                        className={`font-medium text-sm ${
+                          isDarkMode ? "text-white/85" : "text-gray-800"
+                        }`}
+                      >
+                        {item.label}
+                      </div>
+                    </div>
+
+                    {/* Compact description */}
                     <div
-                      className={`mt-2 flex items-center gap-1 text-xs ${
-                        isDarkMode ? "text-red-300" : "text-red-600"
+                      className={`text-xs mt-1 ${
+                        isDarkMode ? "text-white/65" : "text-gray-600"
                       }`}
                     >
-                      <div
-                        className={`w-2 h-2 rounded-full ${
-                          isDarkMode ? "bg-red-400" : "bg-red-600"
-                        } ${
-                          hoveredItem === item.id ? "animate-pulse" : ""
-                        } shadow-lg shadow-red-500/50`}
-                      ></div>
-                      <span className="font-medium">Sign out</span>
+                      {item.description}
                     </div>
-                  )}
 
-                  {/* Tooltip arrow with enhanced styling */}
+                    {/* Compact logout indicator */}
+                    {item.id === "logout" && (
+                      <div
+                        className={`mt-1 flex items-center gap-1.5 text-xs ${
+                          isDarkMode ? "text-red-300" : "text-red-500"
+                        }`}
+                      >
+                        <div
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            isDarkMode ? "bg-red-400/40" : "bg-red-500/40"
+                          }`}
+                          style={{
+                            animation:
+                              "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                          }}
+                        />
+                        <span className="font-medium">Sign out</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ultra-transparent liquid glass arrow */}
                   <div
-                    className={`absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-3 h-3 rotate-45 ${
-                      item.id === "logout"
-                        ? isDarkMode
-                          ? "bg-red-900 border-l border-b border-red-600/50"
-                          : "bg-red-50 border-l border-b border-red-300/50"
-                        : isDarkMode
-                        ? "bg-gray-900 border-l border-b border-gray-600/50"
-                        : "bg-white border-l border-b border-gray-200/50"
+                    className={`absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 rotate-45 ${
+                      isDarkMode
+                        ? "bg-white/3 border-l border-b border-white/6"
+                        : "bg-white/25 border-l border-b border-white/20"
                     }`}
                     style={{
-                      boxShadow:
-                        item.id === "logout"
-                          ? isDarkMode
-                            ? "-2px 2px 4px rgba(239, 68, 68, 0.2)"
-                            : "-2px 2px 4px rgba(239, 68, 68, 0.1)"
-                          : isDarkMode
-                          ? "-2px 2px 4px rgba(0, 0, 0, 0.1)"
-                          : "-2px 2px 4px rgba(0, 0, 0, 0.05)",
+                      backdropFilter: "blur(20px)",
+                      WebkitBackdropFilter: "blur(20px)",
                     }}
                   />
                 </div>
+              )}
+
+              {/* Portal Tooltip for bottom items */}
+              {isCollapsed && hoveredItem === item.id && (
+                <PortalTooltip
+                  item={item}
+                  isVisible={true}
+                  position={tooltipPosition}
+                />
               )}
             </li>
           ))}
@@ -709,9 +799,56 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         .scrollbar-thin::-webkit-scrollbar-thumb:hover {
           background: rgba(156, 163, 175, 0.5);
         }
+
+        /* Ensure tooltips are visible outside sidebar */
+        li {
+          overflow: visible !important;
+        }
+
+        /* Force tooltips to be above other elements */
+        [class*="absolute left-full"] {
+          z-index: 9999 !important;
+          pointer-events: auto !important;
+        }
+
+        /* Ensure tooltips don't get clipped */
+        nav,
+        div[class*="p-2 border-t"] {
+          overflow: visible !important;
+        }
       `}</style>
     </div>
   );
 };
 
 export default Sidebar;
+
+{
+  /* Custom CSS for subtle bookmark-style button */
+}
+<style jsx>{`
+  /* Subtle bookmark button styling */
+  button[title*="sidebar"] {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+
+  /* Minimal hover effects */
+  button[title*="sidebar"]:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Dark mode specific styling */
+  .dark button[title*="sidebar"] {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  .dark button[title*="sidebar"]:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Remove prominent animations */
+  button[title*="sidebar"]::before {
+    display: none;
+  }
+`}</style>;
