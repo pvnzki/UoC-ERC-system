@@ -12,7 +12,6 @@ import Home from "../pages/TechnicalAdmin/Home";
 import CommitteeManagement from "../components/TechnicalAdmin/CommitteeManagement/CommitteeManagement";
 import UserManagement from "../components/TechnicalAdmin/UserManagement/UserManagement";
 import MeetingManagement from "../components/TechnicalAdmin/MeetingManagement/MeetingManagement";
-import Analytics from "../components/TechnicalAdmin/Analytics/Analytics";
 
 const ERCTechnicalCommitteeRoutes = () => {
   const { isDarkMode } = useTheme();
@@ -20,26 +19,22 @@ const ERCTechnicalCommitteeRoutes = () => {
 
   return (
     <div
-      className={`h-screen flex flex-col ${
+      className={`min-h-screen flex flex-col ${
         isDarkMode ? "bg-gray-900" : "bg-gray-50"
       }`}
     >
-      <div className="fixed top-0 left-0 w-full z-50">
+      <div className="sticky top-0 left-0 w-full z-50">
         <Header />
       </div>
 
-      <div className="flex flex-1 pt-20 overflow-hidden">
+      <div className="flex flex-1 pt-20">
         <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
         {/* Main Content */}
         <div
-          className={`flex-grow transition-all duration-700 ease-out p-6 overflow-y-auto ${
+          className={`flex-grow transition-all duration-700 ease-out p-6 ${
             isDarkMode ? "bg-gray-800" : "bg-gray-100"
           }`}
-          style={{
-            marginLeft: isCollapsed ? "0" : "0",
-            transform: isCollapsed ? "translateX(0)" : "translateX(0)",
-          }}
         >
           <Routes>
             {/* Dashboard Overview - Main admin page */}
@@ -69,9 +64,6 @@ const ERCTechnicalCommitteeRoutes = () => {
 
             {/* Meeting Management */}
             <Route path="/meetings" element={<MeetingManagement />} />
-
-            {/* Analytics */}
-            <Route path="/analytics" element={<Analytics />} />
           </Routes>
         </div>
       </div>

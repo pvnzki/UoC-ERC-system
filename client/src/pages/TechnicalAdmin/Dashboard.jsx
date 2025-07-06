@@ -33,15 +33,15 @@ const Dashboard = () => {
 
   return (
     <div
-      className={`h-screen flex flex-col ${
+      className={`min-h-screen flex flex-col ${
         isDarkMode ? "bg-gray-900" : "bg-gray-50"
       }`}
     >
-      <div className="fixed top-0 left-0 w-full z-50">
+      <div className="sticky top-0 left-0 w-full z-50">
         <Header />
       </div>
 
-      <div className="flex flex-1 pt-20 overflow-hidden">
+      <div className="flex pt-20">
         <Sidebar
           isCollapsed={isCollapsed}
           setIsCollapsed={setIsCollapsed}
@@ -50,7 +50,7 @@ const Dashboard = () => {
         />
 
         <div
-          className={`flex-grow transition-all duration-300 p-6 overflow-y-auto ${
+          className={`flex-1 transition-all duration-300 p-6 ${
             currentView === "dashboard"
               ? isDarkMode
                 ? "bg-gray-900"
