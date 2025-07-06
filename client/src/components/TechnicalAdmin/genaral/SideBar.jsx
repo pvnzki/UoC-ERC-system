@@ -200,6 +200,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     navigate(path);
   };
 
+  const handleBottomMenuClick = (itemId) => {
+    if (itemId === "settings") {
+      navigate("/Technical-Admin/settings");
+    } else if (itemId === "logout") {
+      handleLogout();
+    }
+  };
+
   const handleLogout = () => {
     // Add logout logic here
     console.log("Logout clicked");
@@ -236,6 +244,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     if (path === "/Technical-Admin") {
       return location.pathname === "/Technical-Admin";
     }
+    if (path === "/settings") {
+      return location.pathname === "/Technical-Admin/settings";
+    }
     return location.pathname.startsWith(path);
   };
 
@@ -247,7 +258,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     <div
       className={`${
         isCollapsed ? "w-21" : "w-64"
-      } h-full transition-all duration-700 ease-out shadow-2xl border-r relative overflow-visible ${
+      } sticky top-20 h-[calc(100vh-5rem)] transition-all duration-700 ease-out shadow-2xl border-r relative overflow-visible flex flex-col ${
         isDarkMode
           ? "bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 border-gray-700"
           : "bg-gradient-to-b from-white via-gray-50 to-white border-gray-200"
@@ -491,7 +502,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                 </div>
               )}
 
-              {/* Portal Tooltip */}
+              {/* Portal Tooltip for bottom items */}
               {isCollapsed && hoveredItem === item.id && (
                 <PortalTooltip
                   item={item}
@@ -506,7 +517,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
       {/* Bottom Menu with enhanced styling */}
       <div
-        className={`p-2 border-t transition-all duration-500 ease-out ${
+        className={`p-2 border-t transition-all duration-500 ease-out flex-shrink-0 ${
           isDarkMode ? "border-gray-700/50" : "border-gray-200/50"
         }`}
       >
@@ -524,7 +535,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           {bottomMenuItems.map((item, index) => (
             <li key={item.id} className="relative">
               <button
-                onClick={item.id === "logout" ? handleLogout : () => {}}
+                onClick={() => handleBottomMenuClick(item.id)}
                 onMouseEnter={(e) => handleMouseEnter(item, e)}
                 onMouseLeave={handleMouseLeave}
                 className={`w-full flex items-center rounded-xl transition-all duration-500 ease-out relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-blue-400/40 transform hover:scale-[1.02] ${

@@ -12,6 +12,7 @@ import Home from "../pages/TechnicalAdmin/Home";
 import CommitteeManagement from "../components/TechnicalAdmin/CommitteeManagement/CommitteeManagement";
 import UserManagement from "../components/TechnicalAdmin/UserManagement/UserManagement";
 import MeetingManagement from "../components/TechnicalAdmin/MeetingManagement/MeetingManagement";
+import Settings from "../components/TechnicalAdmin/Settings/Settings";
 
 const ERCTechnicalCommitteeRoutes = () => {
   const { isDarkMode } = useTheme();
@@ -23,9 +24,7 @@ const ERCTechnicalCommitteeRoutes = () => {
         isDarkMode ? "bg-gray-900" : "bg-gray-50"
       }`}
     >
-      <div className="sticky top-0 left-0 w-full z-50">
-        <Header />
-      </div>
+      <Header />
 
       <div className="flex flex-1 pt-20">
         <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
@@ -64,6 +63,9 @@ const ERCTechnicalCommitteeRoutes = () => {
 
             {/* Meeting Management */}
             <Route path="/meetings" element={<MeetingManagement />} />
+
+            {/* Settings */}
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </div>
       </div>
