@@ -1583,6 +1583,201 @@ const adminController = {
         .json({ error: "Failed to fetch recent activities" });
     }
   },
+
+  // Analytics endpoints
+  async getAnalyticsData(req, res) {
+    try {
+      const { timeRange = "30d" } = req.query;
+      
+      // Get application trends over time
+      let applicationTrends = [];
+      try {
+        applicationTrends = await db.sequelize.query(
+          `
+          SELECT 
+            DATE_TRUNC('month', "submission_date") as month,
+            COUNT(*) as submitted,
+            COUNT(CASE WHEN status = 'APPROVED' THEN 1 END) as approved,
+            COUNT(CASE WHEN status = 'REJECTED' THEN 1 END) as rejected
+          FROM "Applications"
+          WHERE "submission_date" >= NOW() - INTERVAL '12 months'
+          GROUP BY DATE_TRUNC('month', "submission_date")
+          ORDER BY month
+        `,
+          { type: db.sequelize.QueryTypes.SELECT }
+        );
+      } catch (error) {
+        console.error("Error fetching application trends:", error);
+      }
+
+      // Get committee performance
+      let committeePerformance = [];
+      try {
+        committeePerformance = await db.sequelize.query(
+          `
+          SELECT 
+            c.committee_name as name,
+            COUNT(a.application_id) as applications,
+            ROUND(
+              (COUNT(CASE WHEN a.status = 'APPROVED' THEN 1 END) * 100.0 / COUNT(a.application_id)), 1
+            ) as approval_rate,
+            ROUND(
+              AVG(EXTRACT(EPOCH FROM (a.last_updated - a.submission_date))/86400), 1
+            ) as avg_time
+          FROM "Committees" c
+          LEFT JOIN "Applications" a ON c.committee_id = a.assigned_committee_id
+          GROUP BY c.committee_id, c.committee_name
+          ORDER BY applications DESC
+        `,
+          { type: db.sequelize.QueryTypes.SELECT }
+        );
+      } catch (error) {
+        console.error("Error fetching committee performance:", error);
+      }
+
+      // Get category distribution
+      let categoryDistribution = [];
+      try {
+        categoryDistribution = await db.sequelize.query(
+          `
+          SELECT 
+            research_type as category,
+            COUNT(*) as count,
+            ROUND((COUNT(*) * 100.0 / (SELECT COUNT(*) FROM "Applications")), 1) as percentage
+          FROM "Applications"
+          GROUP BY research_type
+          ORDER BY count DESC
+        `,
+          { type: db.sequelize.QueryTypes.SELECT }
+        );
+      } catch (error) {
+        console.error("Error fetching category distribution:", error);
+      }
+
+      // Get processing times trend
+      let processingTimes = [];
+      try {
+        processingTimes = await db.sequelize.query(
+          `
+          SELECT 
+            DATE_TRUNC('month', "submission_date") as month,
+            ROUND(
+              AVG(EXTRACT(EPOCH FROM (last_updated - submission_date))/86400), 1
+            ) as average_days
+          FROM "Applications"
+          WHERE status IN ('APPROVED', 'REJECTED') 
+            AND last_updated IS NOT NULL 
+            AND "submission_date" >= NOW() - INTERVAL '12 months'
+          GROUP BY DATE_TRUNC('month', "submission_date")
+          ORDER BY month
+        `,
+          { type: db.sequelize.QueryTypes.SELECT }
+        );
+      } catch (error) {
+        console.error("Error fetching processing times:", error);
+      }
+
+      // Get user growth
+      let userGrowth = [];
+      try {
+        userGrowth = await db.sequelize.query(
+          `
+          SELECT 
+            DATE_TRUNC('month', "created_at") as month,
+            COUNT(*) as new_users,
+            COUNT(CASE WHEN validity = true THEN 1 END) as active_users
+          FROM "Users"
+          WHERE "created_at" >= NOW() - INTERVAL '12 months'
+          GROUP BY DATE_TRUNC('month', "created_at")
+          ORDER BY month
+        `,
+          { type: db.sequelize.QueryTypes.SELECT }
+        );
+      } catch (error) {
+        console.error("Error fetching user growth:", error);
+      }
+
+      const analyticsData = {
+        applicationTrends: applicationTrends.map(trend => ({
+          month: new Date(trend.month).toLocaleDateString('en-US', { month: 'short' }),
+          submitted: parseInt(trend.submitted) || 0,
+          approved: parseInt(trend.approved) || 0,
+          rejected: parseInt(trend.rejected) || 0,
+        })),
+        committeePerformance: committeePerformance.map(committee => ({
+          name: committee.name,
+          applications: parseInt(committee.applications) || 0,
+          approvalRate: parseFloat(committee.approval_rate) || 0,
+          avgTime: parseFloat(committee.avg_time) || 0,
+        })),
+        categoryDistribution: categoryDistribution.map(category => ({
+          category: category.category,
+          count: parseInt(category.count) || 0,
+          percentage: parseFloat(category.percentage) || 0,
+        })),
+        processingTimes: processingTimes.map(time => ({
+          month: new Date(time.month).toLocaleDateString('en-US', { month: 'short' }),
+          averageDays: parseFloat(time.average_days) || 0,
+        })),
+        userGrowth: userGrowth.map(growth => ({
+          month: new Date(growth.month).toLocaleDateString('en-US', { month: 'short' }),
+          newUsers: parseInt(growth.new_users) || 0,
+          activeUsers: parseInt(growth.active_users) || 0,
+        })),
+      };
+
+      return res.status(200).json(analyticsData);
+    } catch (error) {
+      console.error("Error fetching analytics data:", error);
+      return res.status(500).json({ error: "Failed to fetch analytics data" });
+    }
+  },
+
+  // Get recent activities for analytics
+  async getRecentActivities(req, res) {
+    try {
+      const { limit = 10 } = req.query;
+      
+      let activities = [];
+      try {
+        activities = await db.sequelize.query(
+          `
+          SELECT 
+            'application' as type,
+            a.application_id as id,
+            a.status as action,
+            CONCAT(ap.first_name, ' ', ap.last_name) as user,
+            a.submission_date as time,
+            a.status as status
+          FROM "Applications" a
+          JOIN "Applicants" ap ON a.applicant_id = ap.applicant_id
+          ORDER BY a.submission_date DESC
+          LIMIT $1
+        `,
+          { 
+            type: db.sequelize.QueryTypes.SELECT,
+            replacements: [parseInt(limit)]
+          }
+        );
+      } catch (error) {
+        console.error("Error fetching recent activities:", error);
+      }
+
+      const formattedActivities = activities.map((activity, index) => ({
+        id: index + 1,
+        type: activity.type,
+        action: `Application ${activity.action}`,
+        user: activity.user,
+        time: new Date(activity.time).toLocaleDateString(),
+        status: activity.status,
+      }));
+
+      return res.status(200).json(formattedActivities);
+    } catch (error) {
+      console.error("Error fetching recent activities:", error);
+      return res.status(500).json({ error: "Failed to fetch recent activities" });
+    }
+  },
 };
 
 module.exports = adminController;

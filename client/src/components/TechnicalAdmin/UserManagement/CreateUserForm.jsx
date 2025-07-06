@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { Loader, CheckCircle, Mail, AlertTriangle } from "lucide-react";
+import { useTheme } from "../../../context/theme/ThemeContext";
 
 const CreateUserForm = ({ onSubmit, committees }) => {
+  const { isDarkMode } = useTheme();
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -93,24 +95,50 @@ const CreateUserForm = ({ onSubmit, committees }) => {
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6 mb-6 relative">
-      <h2 className="text-xl font-semibold mb-4">Create New User</h2>
+    <div
+      className={`shadow-md rounded-lg p-6 mb-6 relative ${
+        isDarkMode ? "bg-gray-800" : "bg-white"
+      }`}
+    >
+      <h2
+        className={`text-xl font-semibold mb-4 ${
+          isDarkMode ? "text-white" : "text-gray-900"
+        }`}
+      >
+        Create New User
+      </h2>
 
       {/* Confirmation Dialog */}
       {showConfirmation && (
         <div className="fixed inset-0 bg-black/80 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-semibold mb-3">
+          <div
+            className={`rounded-lg p-6 max-w-md w-full mx-4 ${
+              isDarkMode ? "bg-gray-800" : "bg-white"
+            }`}
+          >
+            <h3
+              className={`text-xl font-semibold mb-3 ${
+                isDarkMode ? "text-white" : "text-gray-900"
+              }`}
+            >
               Confirm User Creation
             </h3>
-            <p className="mb-4">
+            <p
+              className={`mb-4 ${
+                isDarkMode ? "text-gray-200" : "text-gray-700"
+              }`}
+            >
               Are you sure you want to create an account for{" "}
               <strong>
                 {formData.firstName} {formData.lastName}
               </strong>
               ?
             </p>
-            <p className="mb-4 text-sm flex items-center gap-2">
+            <p
+              className={`mb-4 text-sm flex items-center gap-2 ${
+                isDarkMode ? "text-gray-300" : "text-gray-600"
+              }`}
+            >
               <Mail size={16} className="text-blue-500" />
               An email with login credentials will be sent to{" "}
               <strong>{formData.email}</strong>.
@@ -118,7 +146,11 @@ const CreateUserForm = ({ onSubmit, committees }) => {
             <div className="flex justify-end gap-3">
               <button
                 onClick={handleCancel}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
+                className={`px-4 py-2 border rounded-md hover:bg-gray-100 ${
+                  isDarkMode
+                    ? "border-gray-600 text-gray-200 hover:bg-gray-700"
+                    : "border-gray-300 text-gray-700"
+                }`}
                 disabled={loading}
               >
                 Cancel
@@ -149,7 +181,9 @@ const CreateUserForm = ({ onSubmit, committees }) => {
       >
         <div>
           <label
-            className="block text-gray-700 text-sm font-bold mb-2"
+            className={`block text-sm font-bold mb-2 ${
+              isDarkMode ? "text-gray-300" : "text-gray-700"
+            }`}
             htmlFor="email"
           >
             Email
@@ -160,14 +194,20 @@ const CreateUserForm = ({ onSubmit, committees }) => {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className={`shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline ${
+              isDarkMode
+                ? "bg-gray-700 border-gray-600 text-white"
+                : "text-gray-700 border-gray-300"
+            }`}
             required
           />
         </div>
 
         <div>
           <label
-            className="block text-gray-700 text-sm font-bold mb-2"
+            className={`block text-sm font-bold mb-2 ${
+              isDarkMode ? "text-gray-300" : "text-gray-700"
+            }`}
             htmlFor="firstName"
           >
             First Name
@@ -178,14 +218,20 @@ const CreateUserForm = ({ onSubmit, committees }) => {
             name="firstName"
             value={formData.firstName}
             onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className={`shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline ${
+              isDarkMode
+                ? "bg-gray-700 border-gray-600 text-white"
+                : "text-gray-700 border-gray-300"
+            }`}
             required
           />
         </div>
 
         <div>
           <label
-            className="block text-gray-700 text-sm font-bold mb-2"
+            className={`block text-sm font-bold mb-2 ${
+              isDarkMode ? "text-gray-300" : "text-gray-700"
+            }`}
             htmlFor="lastName"
           >
             Last Name
@@ -196,14 +242,20 @@ const CreateUserForm = ({ onSubmit, committees }) => {
             name="lastName"
             value={formData.lastName}
             onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className={`shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline ${
+              isDarkMode
+                ? "bg-gray-700 border-gray-600 text-white"
+                : "text-gray-700 border-gray-300"
+            }`}
             required
           />
         </div>
 
         <div>
           <label
-            className="block text-gray-700 text-sm font-bold mb-2"
+            className={`block text-sm font-bold mb-2 ${
+              isDarkMode ? "text-gray-300" : "text-gray-700"
+            }`}
             htmlFor="role"
           >
             Role
@@ -213,7 +265,11 @@ const CreateUserForm = ({ onSubmit, committees }) => {
             name="role"
             value={formData.role}
             onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className={`shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline ${
+              isDarkMode
+                ? "bg-gray-700 border-gray-600 text-white"
+                : "text-gray-700 border-gray-300"
+            }`}
             required
           >
             <option value="">Select Role</option>
@@ -226,7 +282,9 @@ const CreateUserForm = ({ onSubmit, committees }) => {
         {formData.role === "COMMITTEE_MEMBER" && (
           <div>
             <label
-              className="block text-gray-700 text-sm font-bold mb-2"
+              className={`block text-sm font-bold mb-2 ${
+                isDarkMode ? "text-gray-300" : "text-gray-700"
+              }`}
               htmlFor="committeeId"
             >
               Committee
@@ -236,7 +294,11 @@ const CreateUserForm = ({ onSubmit, committees }) => {
               name="committeeId"
               value={formData.committeeId}
               onChange={handleChange}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className={`shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline ${
+                isDarkMode
+                  ? "bg-gray-700 border-gray-600 text-white"
+                  : "text-gray-700 border-gray-300"
+              }`}
               required
             >
               <option value="">Select Committee</option>
@@ -250,7 +312,9 @@ const CreateUserForm = ({ onSubmit, committees }) => {
                   </option>
                 ))
               ) : (
-                <option value="" disabled>No committees available</option>
+                <option value="" disabled>
+                  No committees available
+                </option>
               )}
             </select>
             {committees && committees.length === 0 && (
@@ -264,7 +328,9 @@ const CreateUserForm = ({ onSubmit, committees }) => {
         {formData.role === "ADMIN" && (
           <div>
             <label
-              className="block text-gray-700 text-sm font-bold mb-2"
+              className={`block text-sm font-bold mb-2 ${
+                isDarkMode ? "text-gray-300" : "text-gray-700"
+              }`}
               htmlFor="userType"
             >
               Admin Type
@@ -274,7 +340,11 @@ const CreateUserForm = ({ onSubmit, committees }) => {
               name="userType"
               value={formData.userType}
               onChange={handleChange}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className={`shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline ${
+                isDarkMode
+                  ? "bg-gray-700 border-gray-600 text-white"
+                  : "text-gray-700 border-gray-300"
+              }`}
               required
             >
               <option value="">Select Admin Type</option>

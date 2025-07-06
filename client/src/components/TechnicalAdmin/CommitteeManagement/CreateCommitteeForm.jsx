@@ -1,17 +1,20 @@
 // src/components/TechnicalAdmin/CommitteeManagement/CreateCommitteeForm.jsx
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { X, Users, Calendar, FileText } from "lucide-react";
+import { useTheme } from "../../../context/theme/ThemeContext";
 
 const CreateCommitteeForm = ({ onSubmit }) => {
+  const { isDarkMode } = useTheme();
   const [formData, setFormData] = useState({
-    name: '',
-    type: ''
+    name: "",
+    type: "",
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -21,11 +24,26 @@ const CreateCommitteeForm = ({ onSubmit }) => {
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-      <h2 className="text-xl font-semibold mb-4">Create New Committee</h2>
+    <div
+      className={`shadow-md rounded-lg p-6 mb-6 ${
+        isDarkMode ? "bg-gray-800" : "bg-white"
+      }`}
+    >
+      <h2
+        className={`text-xl font-semibold mb-4 ${
+          isDarkMode ? "text-white" : "text-gray-900"
+        }`}
+      >
+        Create New Committee
+      </h2>
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
+          <label
+            className={`block text-sm font-bold mb-2 ${
+              isDarkMode ? "text-gray-300" : "text-gray-700"
+            }`}
+            htmlFor="name"
+          >
             Committee Name
           </label>
           <input
@@ -34,12 +52,21 @@ const CreateCommitteeForm = ({ onSubmit }) => {
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className={`shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline ${
+              isDarkMode
+                ? "bg-gray-700 border-gray-600 text-white"
+                : "text-gray-700 border-gray-300"
+            }`}
             required
           />
         </div>
         <div className="mb-6">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="type">
+          <label
+            className={`block text-sm font-bold mb-2 ${
+              isDarkMode ? "text-gray-300" : "text-gray-700"
+            }`}
+            htmlFor="type"
+          >
             Committee Type
           </label>
           <select
@@ -47,7 +74,11 @@ const CreateCommitteeForm = ({ onSubmit }) => {
             name="type"
             value={formData.type}
             onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className={`shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline ${
+              isDarkMode
+                ? "bg-gray-700 border-gray-600 text-white"
+                : "text-gray-700 border-gray-300"
+            }`}
             required
           >
             <option value="">Select Type</option>

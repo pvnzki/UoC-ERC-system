@@ -4,14 +4,23 @@ import cancle from "../../../assets/TechnicalAdmin/Cancel.png";
 import tick from "../../../assets/TechnicalAdmin/Check Mark.png";
 import Foward from "../../../assets/TechnicalAdmin/Forward Arrow.png";
 import reject from "../../../assets/TechnicalAdmin/Left 3.png";
+import { useTheme } from "../../../context/theme/ThemeContext";
 
-const Card = ({ children, className = "" }) => (
-  <div className={`bg-white rounded-lg shadow-md p-6 ${className}`}>
-    {children}
-  </div>
-);
+const Card = ({ children, className = "" }) => {
+  const { isDarkMode } = useTheme();
+  return (
+    <div
+      className={`rounded-lg shadow-md p-6 ${className} ${
+        isDarkMode ? "bg-gray-800" : "bg-white"
+      }`}
+    >
+      {children}
+    </div>
+  );
+};
 
 const ApplicationDetails = () => {
+  const { isDarkMode } = useTheme();
   const [statuses, setStatuses] = useState({});
   const [isChecked, setIsChecked] = useState(false);
   const [isForwarded, setIsForwarded] = useState(false);
@@ -74,10 +83,26 @@ const ApplicationDetails = () => {
   const allApproved = documents.every((doc) => statuses[doc.id] === "Approved");
 
   return (
-    <div className="w-full bg-gray-100 p-6 rounded-lg shadow-md overflow-y-auto h-screen pb-20">
+    <div
+      className={`w-full p-6 rounded-lg shadow-md overflow-y-auto h-screen pb-20 ${
+        isDarkMode ? "bg-gray-900" : "bg-gray-100"
+      }`}
+    >
       <Card>
-        <h2 className="text-xl font-semibold mb-2">Applicant Details</h2>
-        <div className="border-b pb-4 mb-4 grid grid-cols-2 gap-4 text-sm text-gray-700">
+        <h2
+          className={`text-xl font-semibold mb-2 ${
+            isDarkMode ? "text-white" : "text-gray-900"
+          }`}
+        >
+          Applicant Details
+        </h2>
+        <div
+          className={`border-b pb-4 mb-4 grid grid-cols-2 gap-4 text-sm ${
+            isDarkMode
+              ? "border-gray-600 text-gray-300"
+              : "border-gray-300 text-gray-700"
+          }`}
+        >
           <div>
             <p>
               <strong>User Name:</strong> {applicationDetails.userName}
@@ -106,14 +131,30 @@ const ApplicationDetails = () => {
           </div>
         </div>
 
-        <h2 className="text-xl font-semibold mb-3">Documents</h2>
+        <h2
+          className={`text-xl font-semibold mb-3 ${
+            isDarkMode ? "text-white" : "text-gray-900"
+          }`}
+        >
+          Documents
+        </h2>
         <div className="space-y-3 p-2 px-10">
           {documents.map((doc) => (
             <div
               key={doc.id}
-              className="flex items-center justify-between p-1 px-10 border-2 border-gray-300 rounded-3xl bg-gray-50"
+              className={`flex items-center justify-between p-1 px-10 border-2 rounded-3xl ${
+                isDarkMode
+                  ? "border-gray-600 bg-gray-700"
+                  : "border-gray-300 bg-gray-50"
+              }`}
             >
-              <p className="font-medium text-lg w-32 border-r-2 border-r-gray-300 mr-10">
+              <p
+                className={`font-medium text-lg w-32 border-r-2 mr-10 ${
+                  isDarkMode
+                    ? "border-r-gray-600 text-white"
+                    : "border-r-gray-300 text-gray-900"
+                }`}
+              >
                 {doc.name}
               </p>
               <div className="text-xs font-medium px-2 py-1 rounded-md pl-10">
@@ -125,12 +166,18 @@ const ApplicationDetails = () => {
                   <img src={pdf} className="w-10 h-10 cursor-pointer" />
                 </a>
               </div>
-              <p className="text-md text-gray-500 flex-1 truncate ml-3">
+              <p
+                className={`text-md flex-1 truncate ml-3 ${
+                  isDarkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
                 <a
                   href={`/path/to/${doc.fileName}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:underline text-blue-600"
+                  className={`hover:underline ${
+                    isDarkMode ? "text-blue-400" : "text-blue-600"
+                  }`}
                 >
                   {doc.fileName}
                 </a>
@@ -138,13 +185,19 @@ const ApplicationDetails = () => {
               {!statuses[doc.id] && !isForwarded && (
                 <div className="flex gap-2">
                   <button
-                    className="p-2 rounded-full hover:bg-red-100"
+                    className={`p-2 rounded-full transition-colors ${
+                      isDarkMode ? "hover:bg-red-900/50" : "hover:bg-red-100"
+                    }`}
                     onClick={() => handleSetStatus(doc.id, "Rejected")}
                   >
                     <img src={cancle} className="w-10 h-10" />
                   </button>
                   <button
-                    className="p-2 rounded-full hover:bg-green-100"
+                    className={`p-2 rounded-full transition-colors ${
+                      isDarkMode
+                        ? "hover:bg-green-900/50"
+                        : "hover:bg-green-100"
+                    }`}
                     onClick={() => handleSetStatus(doc.id, "Approved")}
                   >
                     <img src={tick} className="w-10 h-10" />
@@ -169,7 +222,11 @@ const ApplicationDetails = () => {
 
         {allApproved && !isForwarded && (
           <div className="mt-6 text-center">
-            <label className="flex items-center justify-center gap-2 text-gray-600 text-sm">
+            <label
+              className={`flex items-center justify-center gap-2 text-sm ${
+                isDarkMode ? "text-gray-400" : "text-gray-600"
+              }`}
+            >
               <input
                 type="checkbox"
                 checked={isChecked}
@@ -202,13 +259,21 @@ const ApplicationDetails = () => {
         {Object.keys(statuses).length === documents.length &&
           hasRejectedDocuments &&
           !isReturned && (
-            <div className="mt-6 border-t pt-6 ">
-              <h3 className="text-lg font-semibold text-red-600 mb-3 pl-14">
+            <div className="mt-6 border-t pt-6">
+              <h3
+                className={`text-lg font-semibold mb-3 pl-14 ${
+                  isDarkMode ? "text-red-400" : "text-red-600"
+                }`}
+              >
                 Reason for return
               </h3>
               <div className="flex justify-center">
                 <textarea
-                  className="w-4xl p-3 border rounded-lg mb-4 min-h-[100px]"
+                  className={`w-4xl p-3 border rounded-lg mb-4 min-h-[100px] ${
+                    isDarkMode
+                      ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-500"
+                  }`}
                   placeholder="Type here...."
                   value={returnReason}
                   onChange={(e) => setReturnReason(e.target.value)}

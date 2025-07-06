@@ -1,8 +1,10 @@
 // src/components/TechnicalAdmin/ApplicationReview/ApplicationDetails.jsx
 import React, { useState } from "react";
 import { CheckCircle, XCircle, Send } from "lucide-react";
+import { useTheme } from "../../../context/theme/ThemeContext";
 
 const ApplicationDetails = ({ application, onReview, onSendEmail }) => {
+  const { isDarkMode } = useTheme();
   const [reviewData, setReviewData] = useState({
     outcome: "",
     comments: "",
@@ -47,18 +49,32 @@ const ApplicationDetails = ({ application, onReview, onSendEmail }) => {
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6">
+    <div
+      className={`shadow-md rounded-lg p-6 ${
+        isDarkMode ? "bg-gray-800" : "bg-white"
+      }`}
+    >
       <div className="mb-6 pb-6 border-b">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold">
+          <h2
+            className={`text-xl font-bold ${
+              isDarkMode ? "text-white" : "text-gray-900"
+            }`}
+          >
             Application #{application.application_id}
           </h2>
           <span
             className={`px-3 py-1 rounded-full text-sm font-semibold ${
               application.status === "APPROVED"
-                ? "bg-green-100 text-green-800"
+                ? isDarkMode
+                  ? "bg-green-800 text-green-200"
+                  : "bg-green-100 text-green-800"
                 : application.status === "REJECTED"
-                ? "bg-red-100 text-red-800"
+                ? isDarkMode
+                  ? "bg-red-800 text-red-200"
+                  : "bg-red-100 text-red-800"
+                : isDarkMode
+                ? "bg-blue-800 text-blue-200"
                 : "bg-blue-100 text-blue-800"
             }`}
           >
@@ -69,18 +85,24 @@ const ApplicationDetails = ({ application, onReview, onSendEmail }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div>
-          <h3 className="text-lg font-semibold mb-3">Applicant Information</h3>
+          <h3
+            className={`text-lg font-semibold mb-3 ${
+              isDarkMode ? "text-white" : "text-gray-900"
+            }`}
+          >
+            Applicant Information
+          </h3>
           <div className="space-y-2">
-            <p>
+            <p className={isDarkMode ? "text-gray-200" : "text-gray-700"}>
               <span className="font-medium">Name:</span>{" "}
               {application.applicant?.first_name}{" "}
               {application.applicant?.last_name}
             </p>
-            <p>
+            <p className={isDarkMode ? "text-gray-200" : "text-gray-700"}>
               <span className="font-medium">Email:</span>{" "}
               {application.applicant?.email}
             </p>
-            <p>
+            <p className={isDarkMode ? "text-gray-200" : "text-gray-700"}>
               <span className="font-medium">ID:</span>{" "}
               {application.applicant?.applicant_id}
             </p>
@@ -88,25 +110,31 @@ const ApplicationDetails = ({ application, onReview, onSendEmail }) => {
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold mb-3">Application Details</h3>
+          <h3
+            className={`text-lg font-semibold mb-3 ${
+              isDarkMode ? "text-white" : "text-gray-900"
+            }`}
+          >
+            Application Details
+          </h3>
           <div className="space-y-2">
-            <p>
+            <p className={isDarkMode ? "text-gray-200" : "text-gray-700"}>
               <span className="font-medium">Research Type:</span>{" "}
               {application.research_type}
             </p>
-            <p>
+            <p className={isDarkMode ? "text-gray-200" : "text-gray-700"}>
               <span className="font-medium">Application Type:</span>{" "}
               {application.application_type}
             </p>
-            <p>
+            <p className={isDarkMode ? "text-gray-200" : "text-gray-700"}>
               <span className="font-medium">Submitted:</span>{" "}
               {formatDate(application.submission_date)}
             </p>
-            <p>
+            <p className={isDarkMode ? "text-gray-200" : "text-gray-700"}>
               <span className="font-medium">Last Updated:</span>{" "}
               {formatDate(application.last_updated)}
             </p>
-            <p>
+            <p className={isDarkMode ? "text-gray-200" : "text-gray-700"}>
               <span className="font-medium">Expiry Date:</span>{" "}
               {formatDate(application.expiry_date)}
             </p>
@@ -115,22 +143,58 @@ const ApplicationDetails = ({ application, onReview, onSendEmail }) => {
       </div>
 
       {application.admin_comments && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-md font-semibold mb-2">Admin Comments</h3>
-          <p className="text-gray-700">{application.admin_comments}</p>
+        <div
+          className={`mb-6 p-4 rounded-lg ${
+            isDarkMode ? "bg-gray-700" : "bg-gray-50"
+          }`}
+        >
+          <h3
+            className={`text-md font-semibold mb-2 ${
+              isDarkMode ? "text-white" : "text-gray-900"
+            }`}
+          >
+            Admin Comments
+          </h3>
+          <p className={isDarkMode ? "text-gray-200" : "text-gray-700"}>
+            {application.admin_comments}
+          </p>
         </div>
       )}
 
       {application.documents && application.documents.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3">Documents</h3>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <ul className="divide-y divide-gray-200">
+          <h3
+            className={`text-lg font-semibold mb-3 ${
+              isDarkMode ? "text-white" : "text-gray-900"
+            }`}
+          >
+            Documents
+          </h3>
+          <div
+            className={`p-4 rounded-lg ${
+              isDarkMode ? "bg-gray-700" : "bg-gray-50"
+            }`}
+          >
+            <ul
+              className={`divide-y ${
+                isDarkMode ? "divide-gray-600" : "divide-gray-200"
+              }`}
+            >
               {application.documents.map((doc, index) => (
                 <li key={index} className="py-3 flex justify-between">
                   <div>
-                    <p className="font-medium">{doc.document_type}</p>
-                    <p className="text-sm text-gray-500">
+                    <p
+                      className={`font-medium ${
+                        isDarkMode ? "text-gray-200" : "text-gray-900"
+                      }`}
+                    >
+                      {doc.document_type}
+                    </p>
+                    <p
+                      className={`text-sm ${
+                        isDarkMode ? "text-gray-400" : "text-gray-500"
+                      }`}
+                    >
                       Uploaded: {formatDate(doc.upload_date)}
                     </p>
                   </div>
@@ -138,7 +202,11 @@ const ApplicationDetails = ({ application, onReview, onSendEmail }) => {
                     href={doc.file_path}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800"
+                    className={
+                      isDarkMode
+                        ? "text-blue-400 hover:text-blue-300"
+                        : "text-blue-600 hover:text-blue-800"
+                    }
                   >
                     View Document
                   </a>
@@ -150,14 +218,26 @@ const ApplicationDetails = ({ application, onReview, onSendEmail }) => {
       )}
 
       {showEmailForm ? (
-        <div className="mb-6 p-4 border border-blue-200 rounded-lg bg-blue-50">
-          <h3 className="text-lg font-semibold mb-3">
+        <div
+          className={`mb-6 p-4 border rounded-lg ${
+            isDarkMode
+              ? "border-blue-400 bg-blue-900/20"
+              : "border-blue-200 bg-blue-50"
+          }`}
+        >
+          <h3
+            className={`text-lg font-semibold mb-3 ${
+              isDarkMode ? "text-white" : "text-gray-900"
+            }`}
+          >
             Send Email to Applicant
           </h3>
           <form onSubmit={handleEmailSubmit}>
             <div className="mb-4">
               <label
-                className="block text-gray-700 text-sm font-bold mb-2"
+                className={`block text-sm font-bold mb-2 ${
+                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                }`}
                 htmlFor="subject"
               >
                 Subject
@@ -168,13 +248,19 @@ const ApplicationDetails = ({ application, onReview, onSendEmail }) => {
                 name="subject"
                 value={emailData.subject}
                 onChange={handleEmailChange}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                className={`shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline ${
+                  isDarkMode
+                    ? "bg-gray-700 border-gray-600 text-white"
+                    : "text-gray-700 border-gray-300"
+                }`}
                 required
               />
             </div>
             <div className="mb-4">
               <label
-                className="block text-gray-700 text-sm font-bold mb-2"
+                className={`block text-sm font-bold mb-2 ${
+                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                }`}
                 htmlFor="message"
               >
                 Message
@@ -185,7 +271,11 @@ const ApplicationDetails = ({ application, onReview, onSendEmail }) => {
                 value={emailData.message}
                 onChange={handleEmailChange}
                 rows="4"
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                className={`shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline ${
+                  isDarkMode
+                    ? "bg-gray-700 border-gray-600 text-white"
+                    : "text-gray-700 border-gray-300"
+                }`}
                 required
               ></textarea>
             </div>
@@ -193,7 +283,11 @@ const ApplicationDetails = ({ application, onReview, onSendEmail }) => {
               <button
                 type="button"
                 onClick={() => setShowEmailForm(false)}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                className={`font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+                  isDarkMode
+                    ? "bg-gray-600 hover:bg-gray-500 text-gray-200"
+                    : "bg-gray-300 hover:bg-gray-400 text-gray-800"
+                }`}
               >
                 Cancel
               </button>

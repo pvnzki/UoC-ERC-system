@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { X, Users, User, Plus, Search } from "lucide-react";
 import { adminServices } from "../../../../services/admin-services";
 import { toast } from "react-toastify";
+import { useTheme } from "../../../context/theme/ThemeContext";
 
 const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
+  const { isDarkMode } = useTheme();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -117,25 +119,45 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div
+        className={`rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto ${
+          isDarkMode ? "bg-gray-800" : "bg-white"
+        }`}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div
+          className={`flex items-center justify-between p-6 border-b ${
+            isDarkMode ? "border-gray-600" : "border-gray-200"
+          }`}
+        >
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-green-100 rounded-lg">
               <Users className="w-6 h-6 text-green-600" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2
+                className={`text-xl font-semibold ${
+                  isDarkMode ? "text-white" : "text-gray-900"
+                }`}
+              >
                 Add Members to Committee
               </h2>
-              <p className="text-sm text-gray-500">
+              <p
+                className={`text-sm ${
+                  isDarkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
                 {committee.committee_name}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className={`p-2 rounded-lg transition-colors ${
+              isDarkMode
+                ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700"
+                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
@@ -152,7 +174,11 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
                 </div>
                 <input
                   type="text"
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className={`block w-full pl-10 pr-3 py-2 border rounded-md leading-5 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                    isDarkMode
+                      ? "border-gray-600 bg-gray-700 text-white placeholder-gray-400"
+                      : "border-gray-300 bg-white"
+                  }`}
                   placeholder="Search committee members by name, email, or ID..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -162,8 +188,18 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
 
             {/* Selected Users Summary */}
             {selectedUsers.length > 0 && (
-              <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                <h3 className="text-sm font-medium text-blue-900 mb-2">
+              <div
+                className={`mb-6 p-4 rounded-lg ${
+                  isDarkMode
+                    ? "bg-blue-900/30 border border-blue-700"
+                    : "bg-blue-50"
+                }`}
+              >
+                <h3
+                  className={`text-sm font-medium mb-2 ${
+                    isDarkMode ? "text-blue-300" : "text-blue-900"
+                  }`}
+                >
                   Selected Users ({selectedUsers.length})
                 </h3>
                 <div className="space-y-2">
@@ -174,17 +210,29 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
                     return user ? (
                       <div
                         key={selectedUser.userId}
-                        className="flex items-center justify-between bg-white p-2 rounded border"
+                        className={`flex items-center justify-between p-2 rounded border ${
+                          isDarkMode
+                            ? "bg-gray-700 border-gray-600"
+                            : "bg-white border-gray-200"
+                        }`}
                       >
                         <div className="flex items-center space-x-3">
                           <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
                             <User className="h-4 w-4 text-blue-600" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">
+                            <p
+                              className={`text-sm font-medium ${
+                                isDarkMode ? "text-white" : "text-gray-900"
+                              }`}
+                            >
                               {user.first_name} {user.last_name}
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p
+                              className={`text-xs ${
+                                isDarkMode ? "text-gray-400" : "text-gray-500"
+                              }`}
+                            >
                               {user.email}
                             </p>
                           </div>
@@ -198,7 +246,11 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
                                 e.target.value
                               )
                             }
-                            className="text-xs border border-gray-300 rounded px-2 py-1"
+                            className={`text-xs border rounded px-2 py-1 ${
+                              isDarkMode
+                                ? "border-gray-600 bg-gray-700 text-white"
+                                : "border-gray-300"
+                            }`}
                           >
                             <option value="MEMBER">Member</option>
                             <option value="CHAIR">Chair</option>
@@ -207,7 +259,11 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
                           <button
                             type="button"
                             onClick={() => handleUserSelect(user)}
-                            className="text-red-600 hover:text-red-800"
+                            className={`transition-colors ${
+                              isDarkMode
+                                ? "text-red-400 hover:text-red-300"
+                                : "text-red-600 hover:text-red-800"
+                            }`}
                           >
                             <X className="h-4 w-4" />
                           </button>
@@ -221,10 +277,18 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
 
             {/* Available Users */}
             <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
+              <h3
+                className={`text-lg font-medium mb-4 ${
+                  isDarkMode ? "text-white" : "text-gray-900"
+                }`}
+              >
                 Available Committee Members
               </h3>
-              <p className="text-sm text-gray-600 mb-4">
+              <p
+                className={`text-sm mb-4 ${
+                  isDarkMode ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
                 Only active committee members can be added to committees. Other
                 user types (admins, applicants, staff) are not shown.
               </p>
@@ -234,7 +298,11 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
                 </div>
               ) : filteredUsers.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div
+                  className={`text-center py-8 ${
+                    isDarkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
                   <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
                   <p>No available committee members found.</p>
                   <p className="text-sm mt-2">
@@ -244,30 +312,71 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
                   </p>
                 </div>
               ) : (
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <div
+                  className={`border rounded-lg overflow-hidden ${
+                    isDarkMode
+                      ? "bg-gray-800 border-gray-600"
+                      : "bg-white border-gray-200"
+                  }`}
+                >
                   <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                    <thead
+                      className={isDarkMode ? "bg-gray-700" : "bg-gray-50"}
+                    >
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th
+                          className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                            isDarkMode ? "text-gray-300" : "text-gray-500"
+                          }`}
+                        >
                           Select
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th
+                          className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                            isDarkMode ? "text-gray-300" : "text-gray-500"
+                          }`}
+                        >
                           User
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th
+                          className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                            isDarkMode ? "text-gray-300" : "text-gray-500"
+                          }`}
+                        >
                           Email
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th
+                          className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                            isDarkMode ? "text-gray-300" : "text-gray-500"
+                          }`}
+                        >
                           Role
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th
+                          className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                            isDarkMode ? "text-gray-300" : "text-gray-500"
+                          }`}
+                        >
                           Status
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody
+                      className={`divide-y ${
+                        isDarkMode
+                          ? "bg-gray-800 divide-gray-600"
+                          : "bg-white divide-gray-200"
+                      }`}
+                    >
                       {filteredUsers.map((user) => (
-                        <tr key={user.user_id} className="hover:bg-gray-50">
+                        <tr
+                          key={user.user_id}
+                          className={
+                            isDarkMode
+                              ? "hover:bg-gray-700"
+                              : "hover:bg-gray-50"
+                          }
+                        >
                           <td className="px-6 py-4 whitespace-nowrap">
                             <input
                               type="checkbox"
@@ -284,19 +393,37 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
                                 </div>
                               </div>
                               <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">
+                                <div
+                                  className={`text-sm font-medium ${
+                                    isDarkMode ? "text-white" : "text-gray-900"
+                                  }`}
+                                >
                                   {user.first_name} {user.last_name}
                                 </div>
-                                <div className="text-sm text-gray-500">
+                                <div
+                                  className={`text-sm ${
+                                    isDarkMode
+                                      ? "text-gray-400"
+                                      : "text-gray-500"
+                                  }`}
+                                >
                                   ID: {user.user_id}
                                 </div>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td
+                            className={`px-6 py-4 whitespace-nowrap text-sm ${
+                              isDarkMode ? "text-gray-300" : "text-gray-500"
+                            }`}
+                          >
                             {user.email}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td
+                            className={`px-6 py-4 whitespace-nowrap text-sm ${
+                              isDarkMode ? "text-gray-300" : "text-gray-500"
+                            }`}
+                          >
                             {user.role.replace(/_/g, " ")}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -319,11 +446,19 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
             </div>
 
             {/* Footer */}
-            <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+            <div
+              className={`flex justify-end space-x-3 pt-6 border-t ${
+                isDarkMode ? "border-gray-600" : "border-gray-200"
+              }`}
+            >
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                className={`px-4 py-2 border rounded-md transition-colors ${
+                  isDarkMode
+                    ? "border-gray-600 text-gray-300 hover:bg-gray-700"
+                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                }`}
                 disabled={submitting}
               >
                 Cancel
