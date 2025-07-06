@@ -196,6 +196,36 @@
     border-color: rgba(75, 85, 99, 0.5);
 }
 
+/* Professional Logo Glow Animation */
+@keyframes logoGlow {
+    0% {
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) brightness(1);
+    }
+
+    50% {
+        filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.2)) brightness(1.05);
+    }
+
+    100% {
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) brightness(1);
+    }
+}
+
+/* Dark mode logo glow */
+.dark @keyframes logoGlow {
+    0% {
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5)) brightness(1);
+    }
+
+    50% {
+        filter: drop-shadow(0 4px 12px rgba(96, 165, 250, 0.3)) brightness(1.1);
+    }
+
+    100% {
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5)) brightness(1);
+    }
+}
+
 /* Animated Background */
 .animated-bg {
     background: linear-gradient(-45deg, #0A1F44, #0F2E64, #1E40AF, #3B82F6);

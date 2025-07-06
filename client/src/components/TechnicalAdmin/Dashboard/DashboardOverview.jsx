@@ -1231,7 +1231,9 @@ const DashboardOverview = ({ setCurrentView }) => {
 
 export default DashboardOverview;
 
-{/* Custom CSS for enhanced tab styling */}
+{
+  /* Custom CSS for enhanced tab styling */
+}
 <style jsx>{`
   .tab-container {
     background: rgba(255, 255, 255, 0.1);
@@ -1254,13 +1256,18 @@ export default DashboardOverview;
   }
 
   .tab-button::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
     transition: left 0.5s ease;
   }
 
@@ -1269,25 +1276,37 @@ export default DashboardOverview;
   }
 
   .tab-button.active {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(37, 99, 235, 0.9));
+    background: linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.9),
+      rgba(37, 99, 235, 0.9)
+    );
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     border: 1px solid rgba(59, 130, 246, 0.3);
   }
 
   .tab-button.active::after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: -2px;
     left: 50%;
     transform: translateX(-50%);
     width: 20px;
     height: 2px;
-    background: linear-gradient(90deg, rgba(59, 130, 246, 0.8), rgba(37, 99, 235, 0.8));
+    background: linear-gradient(
+      90deg,
+      rgba(59, 130, 246, 0.8),
+      rgba(37, 99, 235, 0.8)
+    );
     border-radius: 1px;
   }
 
   .dark .tab-button.active {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(37, 99, 235, 0.8));
+    background: linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.8),
+      rgba(37, 99, 235, 0.8)
+    );
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
     border: 1px solid rgba(59, 130, 246, 0.4);
   }
@@ -1306,4 +1325,4 @@ export default DashboardOverview;
     background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.1);
   }
-`}</style>
+`}</style>;
