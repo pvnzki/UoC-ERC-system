@@ -1,16 +1,37 @@
-import React from "react";
-import { X, User, Mail, Shield, Calendar, LogOut } from "lucide-react";
+import React, { useState } from "react";
+import {
+  X,
+  User,
+  Mail,
+  Shield,
+  Calendar,
+  LogOut,
+  AlertTriangle,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import defaultProfile from "../../../assets/default-profile.png";
 import { useAuth } from "../../../../context/auth/AuthContext";
 
 const UserProfileModal = ({ isOpen, onClose, user }) => {
   const { logout } = useAuth();
+  const navigate = useNavigate();
+  const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleLogout = () => {
+  const handleLogoutClick = () => {
+    setShowLogoutConfirmation(true);
+  };
+
+  const handleLogoutConfirm = () => {
     logout();
     onClose();
+    setShowLogoutConfirmation(false);
+    navigate("/login");
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutConfirmation(false);
   };
 
   const formatRole = (role) => {
@@ -158,7 +179,7 @@ const UserProfileModal = ({ isOpen, onClose, user }) => {
         {/* Close Button */}
         <div className="mt-8 flex justify-between">
           <button
-            onClick={handleLogout}
+            onClick={handleLogoutClick}
             className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors flex items-center"
           >
             <LogOut size={16} className="mr-2" />
@@ -171,6 +192,39 @@ const UserProfileModal = ({ isOpen, onClose, user }) => {
             Close
           </button>
         </div>
+
+        {/* Logout Confirmation Dialog */}
+        {showLogoutConfirmation && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-60">
+            <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+              <div className="flex items-center mb-4">
+                <AlertTriangle className="text-yellow-500 mr-3" size={24} />
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Confirm Logout
+                </h3>
+              </div>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to logout? You will be redirected to the
+                login page.
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={handleLogoutCancel}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleLogoutConfirm}
+                  className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors flex items-center"
+                >
+                  <LogOut size={16} className="mr-2" />
+                  Yes, Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

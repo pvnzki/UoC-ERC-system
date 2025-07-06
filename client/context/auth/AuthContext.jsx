@@ -17,6 +17,9 @@ export const AuthContextProvider = ({ children }) => {
   const checkToken = async () => {
     const token = localStorage.getItem("authToken");
     if (!token) {
+      // No token found, user is not authenticated
+      setIsAuthenticated(false);
+      setUser(null);
       setIsLoading(false);
       return;
     }
@@ -49,6 +52,7 @@ export const AuthContextProvider = ({ children }) => {
         setUser(user);
         setIsAuthenticated(true);
       } else {
+        // Token validation failed
         logout();
       }
     } catch (error) {

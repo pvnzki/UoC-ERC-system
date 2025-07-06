@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "committee_id",
         as: "committee",
       });
-      
+
       // CommitteeMeeting has many Meeting Applications
       CommitteeMeeting.hasMany(models.MeetingApplication, {
         foreignKey: "meeting_id",
@@ -46,10 +46,10 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       status: {
-        type: DataTypes.ENUM('SCHEDULED', 'IN_PROGRESS', 'COMPLETED'),
+        type: DataTypes.ENUM("SCHEDULED", "IN_PROGRESS", "COMPLETED"),
         allowNull: false,
-        defaultValue: 'SCHEDULED',
-      }
+        defaultValue: "SCHEDULED",
+      },
     },
     {
       sequelize,
