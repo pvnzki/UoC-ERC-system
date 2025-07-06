@@ -77,4 +77,9 @@ router.post(
   committeeInteractionController.sendApplicantEmail
 ); //sending emails to applicants by erc admin directly(not by the system)
 
+// Dashboard Statistics Routes (3.5.x)
+router.get("/dashboard/stats", adminController.getDashboardStats); //get dashboard statistics
+router.get("/dashboard/activities", adminController.getRecentActivities); //get recent activities
+router.get("/dashboard/test", adminController.testDashboard); //test dashboard functionality
+
 module.exports = router;

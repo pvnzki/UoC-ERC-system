@@ -6,18 +6,20 @@ const SessionExpiredModal = ({ isOpen, onRedirectToLogin }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <AlertTriangle className="w-6 h-6 text-yellow-600" />
+            <div className="p-2 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg">
+              <AlertTriangle className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Session Expired
               </h2>
-              <p className="text-sm text-gray-500">Your session has ended</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Your session has ended
+              </p>
             </div>
           </div>
         </div>
@@ -26,11 +28,11 @@ const SessionExpiredModal = ({ isOpen, onRedirectToLogin }) => {
         <div className="p-6">
           <div className="text-center">
             <div className="mb-4">
-              <AlertTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <AlertTriangle className="w-16 h-16 text-yellow-500 dark:text-yellow-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 Your session has expired
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
                 For your security, you have been automatically logged out.
                 Please log in again to continue.
               </p>

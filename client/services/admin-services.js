@@ -343,6 +343,29 @@ export const adminServices = {
     const response = await instance.get("/admin/check-models");
     return response.data;
   },
+
+  // Dashboard Statistics
+  getDashboardStats: async () => {
+    const instance = createAuthInstance();
+    const response = await instance.get("/admin/dashboard/stats");
+    return response.data;
+  },
+
+  // Get recent activities
+  getRecentActivities: async (limit = 10) => {
+    const instance = createAuthInstance();
+    const response = await instance.get(
+      `/admin/dashboard/activities?limit=${limit}`
+    );
+    return response.data;
+  },
+
+  // Test dashboard API
+  testDashboard: async () => {
+    const instance = createAuthInstance();
+    const response = await instance.get("/admin/dashboard/test");
+    return response.data;
+  },
 };
 
 export default adminServices;
