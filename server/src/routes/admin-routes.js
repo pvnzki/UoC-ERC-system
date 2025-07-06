@@ -36,6 +36,10 @@ router.get("/check-applications-table", adminController.checkApplicationsTable);
 router.get("/check-applicant-table", adminController.checkApplicantTable); //check the structure of the applicants table
 router.get("/check-models", adminController.checkModels); //checking the associations between the tables
 router.get("/applications", adminReviewController.getApplications); //Done
+router.get(
+  "/applications/:applicationId",
+  adminReviewController.getApplicationById
+); // NEW: get single application
 router.put(
   "/applications/:applicationId/review",
   adminReviewController.reviewApplication

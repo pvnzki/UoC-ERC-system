@@ -28,7 +28,7 @@ const upload = multer({
   },
 });
 
-exports.validateToken = (req, res) => {
+exports.validateToken = async (req, res) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) {
     return res.status(401).json({ message: "Unauthorized" });
@@ -37,7 +37,24 @@ exports.validateToken = (req, res) => {
   try {
     // decode JWT token into token, secret_key, user_data & exp_time
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    res.status(200).json({ valid: true, user: decoded });
+
+    // Fetch complete user data from database
+    const user = await db.User.findOne({ where: { user_id: decoded.id } });
+
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    // Return complete user data
+    const userData = {
+      user_id: user.user_id,
+      role: user.role,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+    };
+
+    res.status(200).json({ valid: true, user: userData });
   } catch (error) {
     if (error.name === "TokenExpiredError") {
       return res.status(401).json({ message: "Token expired" });
@@ -71,6 +88,8 @@ exports.validateUser = async (req, res) => {
       user_id: user.user_id,
       role: user.role,
       email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
     };
 
     // If user is an applicant, fetch the applicant record
@@ -101,6 +120,8 @@ exports.validateUser = async (req, res) => {
       id: user.user_id,
       role: user.role,
       email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
     };
     const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES,

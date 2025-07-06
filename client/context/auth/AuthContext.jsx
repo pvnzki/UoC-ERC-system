@@ -13,64 +13,99 @@ export const AuthContextProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    const checkToken = async () => {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
+  // Function to check token validity
+  const checkToken = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
 
-      try {
-        const validToken = await validateUser(token);
-        if (validToken.success) {
-          console.log("validate token user data: ", validToken.user);
-          setUser(validToken.user);
-          setIsAuthenticated(true);
-        } else {
-          logout();
-        }
-      } catch (error) {
-        console.error("Token validation error:", error);
+    try {
+      const validToken = await validateUser(token);
+      if (validToken.success) {
+        // Extract user data from the response (similar to login function)
+        const userData = validToken.user;
+
+        // Store all relevant data returned from the backend
+        const user = {
+          user_id: userData.user_id || userData.id,
+          role: userData.role,
+          email: userData.email,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          // Store role-specific IDs based on user type
+          ...(userData.applicant_id && {
+            applicant_id: userData.applicant_id,
+            applicant_category: userData.applicant_category,
+          }),
+          ...(userData.member_id && {
+            member_id: userData.member_id,
+            committee_id: userData.committee_id,
+            is_active: userData.is_active,
+          }),
+        };
+
+        setUser(user);
+        setIsAuthenticated(true);
+      } else {
         logout();
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Token validation error:", error);
+      logout();
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     checkToken();
   }, []);
+
+  // Set up periodic token validation (every 5 minutes)
+  useEffect(() => {
+    if (isAuthenticated) {
+      const interval = setInterval(() => {
+        console.log("Performing periodic token validation...");
+        checkToken();
+      }, 5 * 60 * 1000); // 5 minutes
+
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated]);
 
   const login = async (username, password) => {
     const isValid = await userLogin(username, password);
     if (isValid.success) {
       setIsAuthenticated(true);
 
+      // Extract user data from the response
+      const responseData = isValid.user;
+      const userData = responseData.data || responseData; // Handle different response structures
+
       // Store all relevant data returned from the backend
       const user = {
-        user_id: isValid.user_id,
-        role: isValid.role,
-        email: isValid.email,
+        user_id: userData.user_id || userData.id,
+        role: userData.role,
+        email: userData.email,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
         // Store role-specific IDs based on user type
-        ...(isValid.applicant_id && {
-          applicant_id: isValid.applicant_id,
-          applicant_category: isValid.applicant_category,
+        ...(userData.applicant_id && {
+          applicant_id: userData.applicant_id,
+          applicant_category: userData.applicant_category,
         }),
-        ...(isValid.member_id && {
-          member_id: isValid.member_id,
-          committee_id: isValid.committee_id,
-          is_active: isValid.is_active,
+        ...(userData.member_id && {
+          member_id: userData.member_id,
+          committee_id: userData.committee_id,
+          is_active: userData.is_active,
         }),
       };
 
       setUser(user);
 
-      // Also store the auth token if you're handling it separately
-      // if (isValid.user.auth) {
-      //   localStorage.setItem('token', isValid.user.auth);
-      // }
-
-      return isValid.user;
+      return user;
     }
 
     return null;
@@ -90,6 +125,7 @@ export const AuthContextProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem("authToken");
     setIsAuthenticated(false);
+    setUser(null); // Clear user data on logout
   };
 
   return (

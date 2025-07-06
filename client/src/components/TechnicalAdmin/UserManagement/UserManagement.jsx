@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import UserList from "./UserList";
 import CreateUserForm from "./CreateUserForm";
 import { adminServices } from "../../../../services/admin-services";
+import { useAuth } from "../../../../context/auth/AuthContext";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -11,6 +12,15 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const { user: currentUser } = useAuth();
+
+  // Debug: Log currentUser changes
+  useEffect(() => {
+    console.log("UserManagement: currentUser changed:", currentUser);
+    console.log("UserManagement: currentUser type:", typeof currentUser);
+    console.log("UserManagement: currentUser user_id:", currentUser?.user_id);
+    console.log("UserManagement: currentUser email:", currentUser?.email);
+  }, [currentUser]);
 
   const fetchUsers = async () => {
     try {
@@ -29,7 +39,7 @@ const UserManagement = () => {
   const fetchCommittees = async () => {
     try {
       const committeesData = await adminServices.getCommittees();
-      console.log('Fetched committees:', committeesData);
+      console.log("Fetched committees:", committeesData);
       setCommittees(committeesData);
     } catch (err) {
       console.error("Failed to load committees:", err);
@@ -41,6 +51,13 @@ const UserManagement = () => {
     fetchUsers();
     fetchCommittees();
   }, []);
+
+  // Refresh users when currentUser changes (after login/logout)
+  useEffect(() => {
+    if (currentUser) {
+      fetchUsers();
+    }
+  }, [currentUser]);
 
   const handleCreateUser = async (userData) => {
     try {
@@ -136,9 +153,11 @@ const UserManagement = () => {
         </div>
       ) : (
         <UserList
+          key={currentUser?.user_id || "no-user"} // Force re-render when user changes
           users={users}
           onUpdateStatus={handleUpdateUserStatus}
           onDeleteUser={handleDeleteUser}
+          currentUser={currentUser}
         />
       )}
     </div>

@@ -5,34 +5,41 @@ import ERCmainRoutes from "./routes/ERCmainRoutes";
 import ERCTechnicalCommitteeRoutes from "./routes/ERCTechnicalCommitteeRoutes";
 import OfficeStaffRoutes from "./routes/OfficeStaffRoutes";
 import { AuthContextProvider } from "../context/auth/AuthContext";
+import { SessionContextProvider } from "../context/session/SessionContext";
+import SessionExpiredModalWrapper from "./components/common/SessionExpiredModalWrapper";
 import AdminDashboard from "./pages/TechnicalAdmin/Dashboard";
 
 const App = () => {
   return (
     <AuthContextProvider>
       <Router>
-        <Routes>
-          {/* Applicant Routes */}
-          <Route path="/*" element={<ApplicantRoutes />} />
+        <SessionContextProvider>
+          <Routes>
+            {/* Applicant Routes */}
+            <Route path="/*" element={<ApplicantRoutes />} />
 
-          {/* Technical Admin Routes */}
-          <Route path="/admin/*" element={<AdminDashboard />} />
+            {/* Technical Admin Routes */}
+            <Route path="/admin/*" element={<AdminDashboard />} />
 
-          {/* CTSC/ARWS Chair Routes */}
-          <Route path="/chair/*" element={<CTSCorARWSChairRoutes />} />
+            {/* CTSC/ARWS Chair Routes */}
+            <Route path="/chair/*" element={<CTSCorARWSChairRoutes />} />
 
-          {/* ERC main committee/ CTSC/ARWS members Routes */}
-          <Route path="/ercmain/*" element={<ERCmainRoutes />} />
+            {/* ERC main committee/ CTSC/ARWS members Routes */}
+            <Route path="/ercmain/*" element={<ERCmainRoutes />} />
 
-          {/* ERC Technical Committee Member Routes */}
-          <Route
-            path="/Technical-Admin/*"
-            element={<ERCTechnicalCommitteeRoutes />}
-          />
+            {/* ERC Technical Committee Member Routes */}
+            <Route
+              path="/Technical-Admin/*"
+              element={<ERCTechnicalCommitteeRoutes />}
+            />
 
-          {/* Office Staff Routes */}
-          <Route path="/officestaff/*" element={<OfficeStaffRoutes />} />
-        </Routes>
+            {/* Office Staff Routes */}
+            <Route path="/officestaff/*" element={<OfficeStaffRoutes />} />
+          </Routes>
+
+          {/* Session Expired Modal */}
+          <SessionExpiredModalWrapper />
+        </SessionContextProvider>
       </Router>
     </AuthContextProvider>
   );
