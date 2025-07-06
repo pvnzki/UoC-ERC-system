@@ -115,3 +115,56 @@ export const userRegister = async (userData) => {
     };
   }
 };
+
+export const logout = () => {
+  // Clear all auth-related storage
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("currentUserId");
+  localStorage.removeItem("applicantId");
+  
+  // Trigger storage events for other tabs
+  window.dispatchEvent(new StorageEvent('storage', {
+    key: 'authToken',
+    newValue: null
+  }));
+  
+  window.dispatchEvent(new StorageEvent('storage', {
+    key: 'currentUserId',
+    newValue: null
+  }));
+};
+
+export const changePassword = async (currentPassword, newPassword) => {
+  try {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      return {
+        success: false,
+        error: "No authentication token found"
+      };
+    }
+
+    const instance = createAuthAxiosInstance();
+    const response = await instance.put("/auth/change-password", {
+      currentPassword,
+      newPassword
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (response.status === 200) {
+      return {
+        success: true,
+        message: response.data.message
+      };
+    } else {
+      return { success: false, error: response.statusText };
+    }
+  } catch (error) {
+    console.log("Change password error: ", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message || "Failed to change password"
+    };
+  }
+};
