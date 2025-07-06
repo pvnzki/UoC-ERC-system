@@ -7,15 +7,18 @@ import {
   Calendar,
   LogOut,
   AlertTriangle,
+  Lock,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import defaultProfile from "../../../assets/default-profile.png";
 import { useAuth } from "../../../../context/auth/AuthContext";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 const UserProfileModal = ({ isOpen, onClose, user }) => {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   if (!isOpen) return null;
 
@@ -32,6 +35,14 @@ const UserProfileModal = ({ isOpen, onClose, user }) => {
 
   const handleLogoutCancel = () => {
     setShowLogoutConfirmation(false);
+  };
+
+  const handleChangePasswordClick = () => {
+    setShowChangePasswordModal(true);
+  };
+
+  const handleChangePasswordClose = () => {
+    setShowChangePasswordModal(false);
   };
 
   const formatRole = (role) => {
@@ -176,21 +187,30 @@ const UserProfileModal = ({ isOpen, onClose, user }) => {
           )}
         </div>
 
-        {/* Close Button */}
-        <div className="mt-8 flex justify-between">
+        {/* Action Buttons */}
+        <div className="mt-8 space-y-3">
           <button
-            onClick={handleLogoutClick}
-            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors flex items-center"
+            onClick={handleChangePasswordClick}
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
           >
-            <LogOut size={16} className="mr-2" />
-            Logout
+            <Lock size={16} className="mr-2" />
+            Change Password
           </button>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-          >
-            Close
-          </button>
+          <div className="flex justify-between">
+            <button
+              onClick={handleLogoutClick}
+              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors flex items-center"
+            >
+              <LogOut size={16} className="mr-2" />
+              Logout
+            </button>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+            >
+              Close
+            </button>
+          </div>
         </div>
 
         {/* Logout Confirmation Dialog */}
@@ -224,6 +244,14 @@ const UserProfileModal = ({ isOpen, onClose, user }) => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Change Password Modal */}
+        {showChangePasswordModal && (
+          <ChangePasswordModal
+            isOpen={showChangePasswordModal}
+            onClose={handleChangePasswordClose}
+          />
         )}
       </div>
     </div>
