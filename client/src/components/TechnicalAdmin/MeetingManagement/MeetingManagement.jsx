@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { 
+  Calendar, 
+  CalendarPlus, 
+  X, 
+  AlertTriangle,
+  FileText
+} from "lucide-react";
 import { adminServices } from "../../../../services/admin-services";
 import MeetingDetailsModal from "./MeetingDetailsModal";
 import MeetingSummaryModal from "./MeetingSummaryModal";
@@ -153,66 +160,73 @@ const MeetingManagement = () => {
   };
 
   return (
-    <div className="container mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1
-          className={`text-2xl font-bold ${
-            isDarkMode ? "text-white" : "text-gray-800"
-          }`}
-        >
-          Meeting Management
-        </h1>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className={`px-4 py-2 rounded-lg transition ${
-            isDarkMode
-              ? "bg-blue-700 text-white hover:bg-blue-800"
-              : "bg-blue-600 text-white hover:bg-blue-700"
-          }`}
-        >
-          {showCreateForm ? "Cancel" : "Create Meeting"}
-        </button>
+    <div className="space-y-4">
+      {/* Compact Header */}
+      <div className={`p-4 rounded-lg backdrop-blur-xl border ${
+        isDarkMode 
+          ? "bg-gray-800/50 border-gray-700/50 text-white" 
+          : "bg-white/70 border-gray-200/50 text-gray-900"
+      } shadow-lg`}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+          <div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+              Meetings
+            </h1>
+          </div>
+          
+          <button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
+              isDarkMode
+                ? "bg-orange-600/80 hover:bg-orange-500/80 text-white"
+                : "bg-orange-600 hover:bg-orange-700 text-white"
+            } shadow-lg hover:shadow-xl`}
+          >
+            {showCreateForm ? (
+              <>
+                <X size={16} />
+                <span>Cancel</span>
+              </>
+            ) : (
+              <>
+                <CalendarPlus size={16} />
+                <span>Add Meeting</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
-      {error && (
-        <div
-          className={`border-l-4 p-4 mb-6 rounded ${
-            isDarkMode
-              ? "bg-red-900/30 border-red-700 text-red-200"
-              : "bg-red-100 border-red-500 text-red-700"
-          }`}
-          role="alert"
-        >
-          <p>{error}</p>
-        </div>
-      )}
-
+      {/* Create Meeting Form */}
       {showCreateForm && (
-        <div
-          className={`p-6 rounded-lg shadow-md mb-6 ${
-            isDarkMode ? "bg-gray-800" : "bg-white"
-          }`}
-        >
-          <h2
-            className={`text-xl font-semibold mb-4 ${
-              isDarkMode ? "text-white" : "text-gray-900"
-            }`}
-          >
-            Create New Meeting
-          </h2>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleCreateMeeting(newMeeting);
-            }}
-          >
+        <div className={`p-4 rounded-lg backdrop-blur-xl border ${
+          isDarkMode 
+            ? "bg-gray-800/50 border-gray-700/50 text-white" 
+            : "bg-white/70 border-gray-200/50 text-gray-900"
+        } shadow-lg`}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Create New Meeting</h2>
+            <button
+              onClick={() => setShowCreateForm(false)}
+              className={`p-2 rounded-lg transition-all duration-300 ${
+                isDarkMode
+                  ? "bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 hover:text-white"
+                  : "bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            handleCreateMeeting(newMeeting);
+          }} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label
-                  className={`block text-sm font-medium mb-2 ${
-                    isDarkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                }`}>
                   Committee
                 </label>
                 <select
@@ -223,19 +237,16 @@ const MeetingManagement = () => {
                       committee_id: e.target.value,
                     })
                   }
-                  className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    isDarkMode
-                      ? "bg-gray-700 border-gray-600 text-white"
-                      : "bg-white border-gray-300 text-gray-900"
-                  }`}
                   required
+                  className={`w-full p-2 rounded-lg border transition-all duration-300 ${
+                    isDarkMode
+                      ? "bg-gray-700/50 border-gray-600/50 text-white focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20"
+                      : "bg-gray-50/50 border-gray-300/50 text-gray-900 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20"
+                  }`}
                 >
                   <option value="">Select Committee</option>
                   {committees.map((committee) => (
-                    <option
-                      key={committee.committee_id}
-                      value={committee.committee_id}
-                    >
+                    <option key={committee.committee_id} value={committee.committee_id}>
                       {committee.committee_name}
                     </option>
                   ))}
@@ -243,15 +254,13 @@ const MeetingManagement = () => {
               </div>
 
               <div>
-                <label
-                  className={`block text-sm font-medium mb-2 ${
-                    isDarkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  Meeting Date
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                }`}>
+                  Meeting Date & Time
                 </label>
                 <input
-                  type="date"
+                  type="datetime-local"
                   value={newMeeting.meeting_date}
                   onChange={(e) =>
                     setNewMeeting({
@@ -259,46 +268,44 @@ const MeetingManagement = () => {
                       meeting_date: e.target.value,
                     })
                   }
-                  className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    isDarkMode
-                      ? "bg-gray-700 border-gray-600 text-white"
-                      : "bg-white border-gray-300 text-gray-900"
-                  }`}
                   required
+                  className={`w-full p-2 rounded-lg border transition-all duration-300 ${
+                    isDarkMode
+                      ? "bg-gray-700/50 border-gray-600/50 text-white focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20"
+                      : "bg-gray-50/50 border-gray-300/50 text-gray-900 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20"
+                  }`}
                 />
               </div>
             </div>
 
-            <div className="mt-4">
-              <label
-                className={`block text-sm font-medium mb-2 ${
-                  isDarkMode ? "text-gray-300" : "text-gray-700"
-                }`}
-              >
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${
+                isDarkMode ? "text-gray-300" : "text-gray-700"
+              }`}>
                 Agenda
               </label>
               <textarea
                 value={newMeeting.agenda}
                 onChange={(e) =>
-                  setNewMeeting({ ...newMeeting, agenda: e.target.value })
+                  setNewMeeting({
+                    ...newMeeting,
+                    agenda: e.target.value,
+                  })
                 }
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                rows={3}
+                className={`w-full p-2 rounded-lg border transition-all duration-300 ${
                   isDarkMode
-                    ? "bg-gray-700 border-gray-600 text-white"
-                    : "bg-white border-gray-300 text-gray-900"
+                    ? "bg-gray-700/50 border-gray-600/50 text-white focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20"
+                    : "bg-gray-50/50 border-gray-300/50 text-gray-900 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20"
                 }`}
-                rows="4"
-                placeholder="Meeting agenda"
-                required
+                placeholder="Enter meeting agenda..."
               />
             </div>
 
-            <div className="mt-4">
-              <label
-                className={`block text-sm font-medium mb-2 ${
-                  isDarkMode ? "text-gray-300" : "text-gray-700"
-                }`}
-              >
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${
+                isDarkMode ? "text-gray-300" : "text-gray-700"
+              }`}>
                 Applications to Review (Optional)
               </label>
               <select
@@ -314,12 +321,12 @@ const MeetingManagement = () => {
                     applicationIds: selectedOptions,
                   });
                 }}
-                className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full p-2 border rounded-lg transition-all duration-300 ${
                   isDarkMode
-                    ? "bg-gray-700 border-gray-600 text-white"
-                    : "bg-white border-gray-300 text-gray-900"
+                    ? "bg-gray-700/50 border-gray-600/50 text-white focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20"
+                    : "bg-gray-50/50 border-gray-300/50 text-gray-900 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20"
                 }`}
-                size="4"
+                size="3"
               >
                 {Array.isArray(applications) &&
                   applications.map((app) => (
@@ -328,35 +335,33 @@ const MeetingManagement = () => {
                     </option>
                   ))}
               </select>
-              <p
-                className={`text-xs mt-1 ${
-                  isDarkMode ? "text-gray-400" : "text-gray-500"
-                }`}
-              >
+              <p className={`text-xs mt-1 ${
+                isDarkMode ? "text-gray-400" : "text-gray-500"
+              }`}>
                 Hold Ctrl (or Cmd on Mac) to select multiple applications
               </p>
             </div>
 
-            <div className="mt-6 flex justify-end space-x-3">
+            <div className="flex justify-end space-x-3">
               <button
                 type="button"
                 onClick={() => setShowCreateForm(false)}
-                className={`px-4 py-2 rounded-md transition ${
+                className={`px-4 py-2 rounded-lg transition-all duration-300 ${
                   isDarkMode
-                    ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                    : "bg-gray-300 text-gray-700 hover:bg-gray-400"
+                    ? "bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 hover:text-white"
+                    : "bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:text-gray-900"
                 }`}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className={`px-4 py-2 rounded-md transition ${
-                  isDarkMode
-                    ? "bg-blue-700 text-white hover:bg-blue-800"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
-                }`}
                 disabled={loading}
+                className={`px-4 py-2 rounded-lg transition-all duration-300 ${
+                  isDarkMode
+                    ? "bg-orange-600/80 hover:bg-orange-500/80 text-white disabled:opacity-50"
+                    : "bg-orange-600 hover:bg-orange-700 text-white disabled:opacity-50"
+                } shadow-lg hover:shadow-xl`}
               >
                 {loading ? "Creating..." : "Create Meeting"}
               </button>
@@ -365,119 +370,109 @@ const MeetingManagement = () => {
         </div>
       )}
 
+      {/* Error Display */}
+      {error && (
+        <div className={`p-3 rounded-lg backdrop-blur-xl border ${
+          isDarkMode
+            ? "bg-red-900/20 border-red-700/30 text-red-200"
+            : "bg-red-50/80 border-red-200/50 text-red-700"
+        } shadow-lg`}>
+          <div className="flex items-center space-x-2">
+            <AlertTriangle size={16} />
+            <p className="text-sm">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Meetings List */}
       {loading && !showCreateForm ? (
-        <div className="flex justify-center items-center h-64">
-          <div
-            className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${
-              isDarkMode ? "border-blue-400" : "border-blue-500"
-            }`}
-          ></div>
+        <div className={`flex justify-center items-center h-32 rounded-lg backdrop-blur-xl border ${
+          isDarkMode 
+            ? "bg-gray-800/50 border-gray-700/50" 
+            : "bg-white/70 border-gray-200/50"
+        } shadow-lg`}>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500 mx-auto mb-2"></div>
+            <p className={`text-sm ${
+              isDarkMode ? "text-gray-300" : "text-gray-600"
+            }`}>
+              Loading...
+            </p>
+          </div>
         </div>
       ) : (
-        <div
-          className={`rounded-lg shadow-md p-6 ${
-            isDarkMode ? "bg-gray-800" : "bg-white"
-          }`}
-        >
-          <h2
-            className={`text-xl font-semibold mb-4 ${
-              isDarkMode ? "text-white" : "text-gray-900"
-            }`}
-          >
-            Committee Meetings
-          </h2>
+        <div className={`p-4 rounded-lg backdrop-blur-xl border ${
+          isDarkMode 
+            ? "bg-gray-800/50 border-gray-700/50 text-white" 
+            : "bg-white/70 border-gray-200/50 text-gray-900"
+        } shadow-lg`}>
+          <h2 className="text-lg font-semibold mb-4">Recent Meetings</h2>
+          
           {meetings.length === 0 ? (
-            <p
-              className={`text-center py-8 ${
+            <div className="text-center py-8">
+              <Calendar size={32} className={`mx-auto mb-3 ${
+                isDarkMode ? "text-gray-600" : "text-gray-400"
+              }`} />
+              <p className={`text-sm ${
                 isDarkMode ? "text-gray-400" : "text-gray-500"
-              }`}
-            >
-              No meetings scheduled
-            </p>
+              }`}>
+                No meetings scheduled yet
+              </p>
+            </div>
           ) : (
-            <div className="space-y-4">
-              {meetings.map((meeting) => (
+            <div className="space-y-3">
+              {meetings.slice(0, 5).map((meeting) => (
                 <div
                   key={meeting.meeting_id}
-                  className={`border rounded-lg p-4 ${
+                  className={`p-4 rounded-lg border transition-all duration-300 hover:shadow-md ${
                     isDarkMode
-                      ? "border-gray-600 bg-gray-700"
-                      : "border-gray-200 bg-white"
+                      ? "bg-gray-700/30 border-gray-600/50 hover:border-gray-500/50"
+                      : "bg-gray-50/50 border-gray-200/50 hover:border-gray-300/50"
                   }`}
                 >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3
-                        className={`font-semibold text-lg ${
-                          isDarkMode ? "text-white" : "text-gray-900"
-                        }`}
-                      >
-                        {meeting.committee_name}
-                      </h3>
-                      <p
-                        className={`${
-                          isDarkMode ? "text-gray-300" : "text-gray-600"
-                        }`}
-                      >
-                        {new Date(meeting.meeting_date).toLocaleDateString()}
-                      </p>
-                      <p
-                        className={`text-sm ${
-                          isDarkMode ? "text-gray-400" : "text-gray-500"
-                        }`}
-                      >
-                        Status:{" "}
-                        <span
-                          className={`font-medium ${
-                            meeting.status === "COMPLETED"
-                              ? isDarkMode
-                                ? "text-green-400"
-                                : "text-green-600"
-                              : meeting.status === "IN_PROGRESS"
-                              ? isDarkMode
-                                ? "text-yellow-300"
-                                : "text-yellow-600"
-                              : isDarkMode
-                              ? "text-blue-400"
-                              : "text-blue-600"
-                          }`}
-                        >
-                          {meeting.status}
-                        </span>
-                      </p>
-                      {meeting.agenda && (
-                        <p
-                          className={`text-sm mt-1 ${
-                            isDarkMode ? "text-gray-300" : "text-gray-600"
-                          }`}
-                        >
-                          Agenda: {meeting.agenda.substring(0, 100)}
-                          {meeting.agenda.length > 100 ? "..." : ""}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-2 rounded-lg ${
+                        isDarkMode ? "bg-gray-600/50" : "bg-gray-100/50"
+                      }`}>
+                        <Calendar size={16} />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">
+                          {meeting.committee?.committee_name || "Unknown Committee"}
+                        </h3>
+                        <p className={`text-sm ${
+                          isDarkMode ? "text-gray-400" : "text-gray-600"
+                        }`}>
+                          {new Date(meeting.meeting_date).toLocaleString()}
                         </p>
-                      )}
+                      </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() =>
-                          handleGenerateSummary(meeting.meeting_id)
-                        }
-                        className={`px-3 py-1 rounded text-sm transition-colors ${
-                          isDarkMode
-                            ? "bg-green-700 text-white hover:bg-green-600"
-                            : "bg-green-600 text-white hover:bg-green-700"
-                        }`}
-                      >
-                        Generate Summary
-                      </button>
+                    <div className="flex items-center space-x-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        meeting.status === 'SCHEDULED' 
+                          ? isDarkMode 
+                            ? "bg-yellow-900/30 text-yellow-200" 
+                            : "bg-yellow-100 text-yellow-800"
+                          : meeting.status === 'COMPLETED'
+                          ? isDarkMode
+                            ? "bg-green-900/30 text-green-200"
+                            : "bg-green-100 text-green-800"
+                          : isDarkMode
+                            ? "bg-gray-700/50 text-gray-300"
+                            : "bg-gray-100 text-gray-800"
+                      }`}>
+                        {meeting.status}
+                      </span>
                       <button
                         onClick={() => setSelectedMeeting(meeting)}
-                        className={`px-3 py-1 rounded text-sm transition-colors ${
+                        className={`p-2 rounded-lg transition-all duration-300 ${
                           isDarkMode
-                            ? "bg-blue-700 text-white hover:bg-blue-600"
-                            : "bg-blue-600 text-white hover:bg-blue-700"
+                            ? "bg-gray-600/50 hover:bg-gray-500/50 text-gray-300 hover:text-white"
+                            : "bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:text-gray-900"
                         }`}
                       >
-                        View Details
+                        <FileText size={14} />
                       </button>
                     </div>
                   </div>
@@ -488,28 +483,42 @@ const MeetingManagement = () => {
         </div>
       )}
 
-      {/* Meeting Details Modal */}
-      <MeetingDetailsModal
-        isOpen={!!selectedMeeting}
-        onClose={() => setSelectedMeeting(null)}
-        meeting={selectedMeeting}
-        onUpdate={fetchMeetings}
-      />
+      {/* Modals */}
+      {selectedMeeting && (
+        <MeetingDetailsModal
+          isOpen={!!selectedMeeting}
+          onClose={() => setSelectedMeeting(null)}
+          meeting={selectedMeeting}
+          onUpdate={fetchMeetings}
+          onRatifyDecisions={handleRatifyDecisions}
+          onGenerateSummary={handleGenerateSummary}
+          onGenerateLetter={handleGenerateLetter}
+        />
+      )}
 
-      {/* Meeting Summary Modal */}
-      <MeetingSummaryModal
-        isOpen={showSummaryModal}
-        onClose={() => setShowSummaryModal(false)}
-        summary={selectedSummary}
-      />
+      {showSummaryModal && selectedSummary && (
+        <MeetingSummaryModal
+          isOpen={showSummaryModal}
+          onClose={() => {
+            setShowSummaryModal(false);
+            setSelectedSummary(null);
+          }}
+          summary={selectedSummary}
+        />
+      )}
 
-      {/* Letter Modal */}
-      <LetterModal
-        isOpen={showLetterModal}
-        onClose={() => setShowLetterModal(false)}
-        letter={selectedLetter}
-        applicationId={selectedApplicationId}
-      />
+      {showLetterModal && selectedLetter && (
+        <LetterModal
+          isOpen={showLetterModal}
+          onClose={() => {
+            setShowLetterModal(false);
+            setSelectedLetter(null);
+            setSelectedApplicationId(null);
+          }}
+          letter={selectedLetter}
+          applicationId={selectedApplicationId}
+        />
+      )}
     </div>
   );
 };
