@@ -37,9 +37,11 @@ exports.validateToken = async (req, res) => {
   try {
     // decode JWT token into token, secret_key, user_data & exp_time
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("[DEBUG /auth/validate] Decoded token:", decoded);
 
     // Fetch complete user data from database
     const user = await db.User.findOne({ where: { user_id: decoded.id } });
+    console.log("[DEBUG /auth/validate] User lookup result:", user);
 
     if (!user) {
       return res.status(401).json({ message: "User not found" });
@@ -52,6 +54,7 @@ exports.validateToken = async (req, res) => {
       email: user.email,
       first_name: user.first_name,
       last_name: user.last_name,
+      is_2fa_enabled: user.is_2fa_enabled, // Add this line
     };
 
     res.status(200).json({ valid: true, user: userData });
@@ -90,6 +93,7 @@ exports.validateUser = async (req, res) => {
       email: user.email,
       first_name: user.first_name,
       last_name: user.last_name,
+      is_2fa_enabled: user.is_2fa_enabled, // Add this line
     };
 
     // If user is an applicant, fetch the applicant record
@@ -114,6 +118,14 @@ exports.validateUser = async (req, res) => {
         userData.committee_id = committeeMember.committee_id;
         userData.is_active = committeeMember.is_active;
       }
+    }
+
+    // If user is an admin and 2FA is enabled, require 2FA code before issuing token
+    if (
+      (user.role === "ADMIN" || user.role === "admin") &&
+      user.is_2fa_enabled
+    ) {
+      return res.status(200).json({ twoFARequired: true, email: user.email });
     }
 
     const tokenPayload = {

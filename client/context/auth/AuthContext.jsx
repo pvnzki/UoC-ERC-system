@@ -37,6 +37,7 @@ export const AuthContextProvider = ({ children }) => {
           email: userData.email,
           first_name: userData.first_name,
           last_name: userData.last_name,
+          is_2fa_enabled: userData.is_2fa_enabled, // Add this line
           // Store role-specific IDs based on user type
           ...(userData.applicant_id && {
             applicant_id: userData.applicant_id,
@@ -95,6 +96,7 @@ export const AuthContextProvider = ({ children }) => {
         email: userData.email,
         first_name: userData.first_name,
         last_name: userData.last_name,
+        is_2fa_enabled: userData.is_2fa_enabled, // Add this line
         // Store role-specific IDs based on user type
         ...(userData.applicant_id && {
           applicant_id: userData.applicant_id,
@@ -134,7 +136,15 @@ export const AuthContextProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, isLoading, user, login, register, logout }}
+      value={{
+        isAuthenticated,
+        isLoading,
+        user,
+        setUser,
+        login,
+        register,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>

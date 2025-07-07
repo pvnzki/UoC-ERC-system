@@ -816,7 +816,7 @@ const DashboardOverview = ({ setCurrentView }) => {
               </div>
             </div>
             <div className="h-64 flex items-end justify-between space-x-2">
-              {analyticsData.applicationTrends.map((month, index) => (
+              {(analyticsData?.applicationTrends || []).map((month, index) => (
                 <div
                   key={index}
                   className="flex-1 flex flex-col items-center space-y-2"
@@ -824,15 +824,21 @@ const DashboardOverview = ({ setCurrentView }) => {
                   <div className="flex flex-col space-y-1 w-full">
                     <div
                       className="bg-blue-500 rounded-t"
-                      style={{ height: `${(month.submitted / 50) * 200}px` }}
+                      style={{
+                        height: `${((month?.submitted || 0) / 50) * 200}px`,
+                      }}
                     ></div>
                     <div
                       className="bg-green-500"
-                      style={{ height: `${(month.approved / 50) * 200}px` }}
+                      style={{
+                        height: `${((month?.approved || 0) / 50) * 200}px`,
+                      }}
                     ></div>
                     <div
                       className="bg-red-500 rounded-b"
-                      style={{ height: `${(month.rejected / 50) * 200}px` }}
+                      style={{
+                        height: `${((month?.rejected || 0) / 50) * 200}px`,
+                      }}
                     ></div>
                   </div>
                   <span
@@ -840,7 +846,7 @@ const DashboardOverview = ({ setCurrentView }) => {
                       isDarkMode ? "text-gray-400" : "text-gray-500"
                     }`}
                   >
-                    {month.month}
+                    {month?.month || "-"}
                   </span>
                 </div>
               ))}
@@ -851,102 +857,124 @@ const DashboardOverview = ({ setCurrentView }) => {
         {/* Committee Performance */}
         <ChartCard title="Committee Performance">
           <div className="space-y-4">
-            {analyticsData.committeePerformance.map((committee, index) => (
-              <div
-                key={index}
-                className={`p-3 rounded-lg border ${
-                  isDarkMode
-                    ? "border-gray-600 bg-gray-700"
-                    : "border-gray-200 bg-gray-50"
-                }`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <h4
-                    className={`font-semibold text-sm ${
-                      isDarkMode ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    {committee.name}
-                  </h4>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      committee.approvalRate >= 80
-                        ? "bg-green-100 text-green-800"
-                        : committee.approvalRate >= 70
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {committee.approvalRate}%
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span
-                      className={isDarkMode ? "text-gray-300" : "text-gray-600"}
+            {(analyticsData?.committeePerformance || []).map(
+              (committee, index) => (
+                <div
+                  key={index}
+                  className={`p-3 rounded-lg border ${
+                    isDarkMode
+                      ? "border-gray-600 bg-gray-700"
+                      : "border-gray-200 bg-gray-50"
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h4
+                      className={`font-semibold text-sm ${
+                        isDarkMode ? "text-white" : "text-gray-900"
+                      }`}
                     >
-                      Applications: {committee.applications}
-                    </span>
+                      {committee?.name || "-"}
+                    </h4>
                     <span
-                      className={isDarkMode ? "text-gray-300" : "text-gray-600"}
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        (committee?.approvalRate || 0) >= 80
+                          ? "bg-green-100 text-green-800"
+                          : (committee?.approvalRate || 0) >= 70
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
                     >
-                      Avg Time: {committee.avgTime} days
+                      {committee?.approvalRate != null
+                        ? committee.approvalRate
+                        : 0}
+                      %
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full"
-                      style={{
-                        width: `${(committee.applications / 50) * 100}%`,
-                      }}
-                    ></div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span
+                        className={
+                          isDarkMode ? "text-gray-300" : "text-gray-600"
+                        }
+                      >
+                        Applications:{" "}
+                        {committee?.applications != null
+                          ? committee.applications
+                          : 0}
+                      </span>
+                      <span
+                        className={
+                          isDarkMode ? "text-gray-300" : "text-gray-600"
+                        }
+                      >
+                        Avg Time:{" "}
+                        {committee?.avgTime != null ? committee.avgTime : 0}{" "}
+                        days
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full"
+                        style={{
+                          width: `${
+                            ((committee?.applications || 0) / 50) * 100
+                          }%`,
+                        }}
+                      ></div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </ChartCard>
 
         {/* Category Distribution */}
         <ChartCard title="Research Categories">
           <div className="space-y-4">
-            {analyticsData.categoryDistribution.map((category, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div
-                    className="w-4 h-4 rounded"
-                    style={{
-                      backgroundColor: `hsl(${index * 90}, 70%, 50%)`,
-                    }}
-                  ></div>
-                  <span
-                    className={`text-sm ${
-                      isDarkMode ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    {category.category}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-20 bg-gray-200 rounded-full h-2">
+            {(analyticsData?.categoryDistribution || []).map(
+              (category, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
                     <div
-                      className="h-2 rounded-full"
+                      className="w-4 h-4 rounded"
                       style={{
-                        width: `${category.percentage}%`,
                         backgroundColor: `hsl(${index * 90}, 70%, 50%)`,
                       }}
                     ></div>
+                    <span
+                      className={`text-sm ${
+                        isDarkMode ? "text-white" : "text-gray-900"
+                      }`}
+                    >
+                      {category?.category || "-"}
+                    </span>
                   </div>
-                  <span
-                    className={`text-sm font-medium ${
-                      isDarkMode ? "text-gray-300" : "text-gray-600"
-                    }`}
-                  >
-                    {category.percentage}%
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-20 bg-gray-200 rounded-full h-2">
+                      <div
+                        className="h-2 rounded-full"
+                        style={{
+                          width: `${
+                            category?.percentage != null
+                              ? category.percentage
+                              : 0
+                          }%`,
+                          backgroundColor: `hsl(${index * 90}, 70%, 50%)`,
+                        }}
+                      ></div>
+                    </div>
+                    <span
+                      className={`text-sm font-medium ${
+                        isDarkMode ? "text-gray-300" : "text-gray-600"
+                      }`}
+                    >
+                      {category?.percentage != null ? category.percentage : 0}%
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </ChartCard>
       </div>
@@ -965,31 +993,35 @@ const DashboardOverview = ({ setCurrentView }) => {
                 Average days to process
               </span>
               <span className="text-lg font-bold text-blue-600">
-                {stats.averageProcessingTime}
+                {stats.averageProcessingTime != null
+                  ? stats.averageProcessingTime
+                  : 0}
               </span>
             </div>
             <MiniChart
-              data={analyticsData.processingTimes.map((pt) =>
-                parseFloat(pt.averageDays)
+              data={(analyticsData?.processingTimes || []).map((pt) =>
+                parseFloat(pt?.averageDays || 0)
               )}
               color="#3B82F6"
               height={120}
             />
             <div className="space-y-2">
-              {analyticsData.processingTimes.slice(-3).map((pt, index) => (
-                <div key={index} className="flex justify-between text-xs">
-                  <span
-                    className={isDarkMode ? "text-gray-400" : "text-gray-500"}
-                  >
-                    {pt.month}
-                  </span>
-                  <span
-                    className={isDarkMode ? "text-gray-300" : "text-gray-600"}
-                  >
-                    {pt.averageDays} days
-                  </span>
-                </div>
-              ))}
+              {(analyticsData?.processingTimes || [])
+                .slice(-3)
+                .map((pt, index) => (
+                  <div key={index} className="flex justify-between text-xs">
+                    <span
+                      className={isDarkMode ? "text-gray-400" : "text-gray-500"}
+                    >
+                      {pt?.month || "-"}
+                    </span>
+                    <span
+                      className={isDarkMode ? "text-gray-300" : "text-gray-600"}
+                    >
+                      {pt?.averageDays != null ? pt.averageDays : 0} days
+                    </span>
+                  </div>
+                ))}
             </div>
           </div>
         </ChartCard>
@@ -1006,27 +1038,30 @@ const DashboardOverview = ({ setCurrentView }) => {
                 New users this month
               </span>
               <span className="text-lg font-bold text-green-600">
-                {analyticsData.userGrowth[analyticsData.userGrowth.length - 1]
-                  ?.newUsers || 0}
+                {(analyticsData?.userGrowth || [])[
+                  (analyticsData?.userGrowth || []).length - 1
+                ]?.newUsers || 0}
               </span>
             </div>
             <MiniChart
-              data={analyticsData.userGrowth.map((ug) => ug.newUsers)}
+              data={(analyticsData?.userGrowth || []).map(
+                (ug) => ug?.newUsers || 0
+              )}
               color="#10B981"
               height={120}
             />
             <div className="space-y-2">
-              {analyticsData.userGrowth.slice(-3).map((ug, index) => (
+              {(analyticsData?.userGrowth || []).slice(-3).map((ug, index) => (
                 <div key={index} className="flex justify-between text-xs">
                   <span
                     className={isDarkMode ? "text-gray-400" : "text-gray-500"}
                   >
-                    {ug.month}
+                    {ug?.month || "-"}
                   </span>
                   <span
                     className={isDarkMode ? "text-gray-300" : "text-gray-600"}
                   >
-                    +{ug.newUsers} users
+                    +{ug?.newUsers || 0} users
                   </span>
                 </div>
               ))}

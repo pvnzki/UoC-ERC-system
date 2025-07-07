@@ -33,6 +33,16 @@ app.use(cors(corsOptions));
 app.use("/api/auth", authRoutes);
 app.use("/api/applications", authorizeRoles("applicant"), applicationRoutes);
 
+// Public 2FA endpoints (must come before the protected admin routes)
+app.post(
+  "/api/admin/security/2fa/request",
+  require("./controllers/admin-controller").request2FACode
+);
+app.post(
+  "/api/admin/security/2fa/verify",
+  require("./controllers/admin-controller").verify2FACode
+);
+
 // In development with BYPASS_AUTH, don't apply the middleware
 if (
   process.env.NODE_ENV === "development" &&

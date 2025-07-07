@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   User,
   Lock,
@@ -29,15 +29,57 @@ import {
 import { useTheme } from "../../../context/theme/ThemeContext";
 import { useAuth } from "../../../../context/auth/AuthContext";
 import ChangePasswordModal from "../genaral/ChangePasswordModal";
+import adminServices from "../../../../services/admin-services";
+import { toast } from "react-toastify";
 
 const Settings = () => {
   const { isDarkMode, toggleTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [activeTab, setActiveTab] = useState("account");
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Add loading state for 2FA toggle
+  const [twoFALoading, setTwoFALoading] = useState(false);
+
+  // Sync 2FA state from user object
+  useEffect(() => {
+    if (user && typeof user.is_2fa_enabled === "boolean") {
+      setSecuritySettings((prev) => ({
+        ...prev,
+        twoFactorAuth: user.is_2fa_enabled,
+      }));
+    }
+  }, [user]);
+
+  // Handler for toggling 2FA
+  const handleToggle2FA = async (enabled) => {
+    setTwoFALoading(true);
+    try {
+      if (enabled) {
+        await adminServices.enable2FA();
+        toast.success("Two-factor authentication enabled.");
+      } else {
+        await adminServices.disable2FA();
+        toast.success("Two-factor authentication disabled.");
+      }
+      setSecuritySettings((prev) => ({ ...prev, twoFactorAuth: enabled }));
+      // Update user context
+      if (user && setUser) {
+        setUser({ ...user, is_2fa_enabled: enabled });
+      }
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.error ||
+          err.message ||
+          "Failed to update 2FA setting."
+      );
+    } finally {
+      setTwoFALoading(false);
+    }
+  };
 
   // Form states
   const [accountForm, setAccountForm] = useState({
@@ -446,13 +488,9 @@ const Settings = () => {
                           <input
                             type="checkbox"
                             checked={securitySettings.twoFactorAuth}
-                            onChange={(e) =>
-                              setSecuritySettings((prev) => ({
-                                ...prev,
-                                twoFactorAuth: e.target.checked,
-                              }))
-                            }
+                            onChange={(e) => handleToggle2FA(e.target.checked)}
                             className="sr-only peer"
+                            disabled={twoFALoading}
                           />
                           <div
                             className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all ${
