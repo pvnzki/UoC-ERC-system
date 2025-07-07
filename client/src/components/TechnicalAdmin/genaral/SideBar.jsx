@@ -20,6 +20,7 @@ import {
   Clock,
   TrendingUp,
   UserPlus,
+  X,
 } from "lucide-react";
 import { useTheme } from "../../../context/theme/ThemeContext";
 
@@ -30,6 +31,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
   const location = useLocation();
+  const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
 
   // Handle transition state to prevent layout shifts
   useEffect(() => {
@@ -204,13 +206,18 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     if (itemId === "settings") {
       navigate("/Technical-Admin/settings");
     } else if (itemId === "logout") {
-      handleLogout();
+      setShowLogoutConfirmation(true); // Only show confirmation, don't logout directly
     }
   };
 
-  const handleLogout = () => {
+  const handleLogoutConfirm = () => {
     // Add logout logic here
     console.log("Logout clicked");
+    setShowLogoutConfirmation(false);
+    navigate("/login");
+  };
+  const handleLogoutCancel = () => {
+    setShowLogoutConfirmation(false);
   };
 
   const handleToggleCollapse = () => {
@@ -828,6 +835,79 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           overflow: visible !important;
         }
       `}</style>
+      {showLogoutConfirmation &&
+        createPortal(
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50 p-4">
+            <div
+              className="max-w-md w-full mx-4 rounded-xl"
+              style={{
+                background: isDarkMode
+                  ? "linear-gradient(135deg, rgba(31, 41, 55, 0.7), rgba(55, 65, 81, 0.7))"
+                  : "linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(249, 250, 251, 0.7))",
+                backdropFilter: "blur(25px)",
+                WebkitBackdropFilter: "blur(25px)",
+                border: isDarkMode
+                  ? "1px solid rgba(75, 85, 99, 0.2)"
+                  : "1px solid rgba(229, 231, 235, 0.3)",
+                boxShadow: isDarkMode
+                  ? "0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05)"
+                  : "0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+              }}
+            >
+              <div className="flex items-center justify-between p-4 border-b">
+                <h3
+                  className={`text-lg font-semibold ${
+                    isDarkMode ? "text-white" : "text-gray-800"
+                  }`}
+                >
+                  Confirm Logout
+                </h3>
+                <button
+                  onClick={handleLogoutCancel}
+                  className={`p-2 rounded-lg transition-all duration-300 ${
+                    isDarkMode
+                      ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700/50"
+                      : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
+                  }`}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div
+                className={`p-4 text-sm ${
+                  isDarkMode ? "text-gray-300" : "text-gray-600"
+                }`}
+              >
+                Are you sure you want to logout? You will be redirected to the
+                login page.
+              </div>
+              <div className="flex justify-end gap-3 p-4 pt-0">
+                <button
+                  onClick={handleLogoutCancel}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isDarkMode
+                      ? "text-gray-300 hover:text-gray-200 hover:bg-gray-700/50"
+                      : "text-gray-600 hover:text-gray-700 hover:bg-gray-100/50"
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleLogoutConfirm}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                    isDarkMode
+                      ? "bg-red-600 text-white hover:bg-red-700"
+                      : "bg-red-600 text-white hover:bg-red-700"
+                  }`}
+                >
+                  <LogOut size={16} />
+                  Yes, Logout
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
