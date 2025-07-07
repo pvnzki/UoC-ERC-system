@@ -5,6 +5,7 @@ import BuildingSketch from "../../assets/Applicant/Building-Sketch.png";
 import Logo from "../../assets/Applicant/logo-menu.png";
 import { useAuth } from "../../../context/auth/AuthContext";
 import { ToastContainer, toast } from "react-toastify";
+import { adminServices } from "../../../services/admin-services";
 
 function Login() {
   const { login } = useAuth();
@@ -16,26 +17,49 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    console.log("Email:", email);
-    console.log("Password:", password);
-
-    const user = await login(email, password);
+    // Try admin login with 2FA support first
+    let user = null;
+    let isAdminAttempt = false;
+    let twoFARequired = false;
+    try {
+      const adminLoginResult = await adminServices.loginWith2FA({
+        email,
+        password,
+      });
+      if (adminLoginResult.twoFARequired) {
+        // Redirect to 2FA page for admin
+        twoFARequired = true;
+        navigate("/admin/2fa", { state: { email, password } });
+        setIsLoading(false);
+        return;
+      }
+      if (adminLoginResult.success) {
+        user = adminLoginResult.user;
+        localStorage.setItem("authToken", adminLoginResult.token);
+        isAdminAttempt = user?.role === "ADMIN" || user?.role === "admin";
+      }
+    } catch (err) {
+      // Ignore and try normal login
+    }
+    if (!user && !twoFARequired) {
+      // Fallback to normal login (applicant, etc)
+      user = await login(email, password);
+    }
     if (user) {
       toast.success("Login successful");
       setTimeout(() => {
-        // Check for admin role (case-insensitive)
         if (user.role === "ADMIN" || user.role === "admin") {
-          navigate("/Technical-Admin");
+          window.location.href = "/Technical-Admin"; // Force reload for admin
         } else {
           navigate("/");
         }
         setIsLoading(false);
-      }, 3000);
-    } else {
+      }, 1000);
+    } else if (!twoFARequired) {
       setTimeout(() => {
         toast.error("Login failed");
         setIsLoading(false);
-      }, 3000);
+      }, 1000);
     }
   };
 

@@ -7,6 +7,10 @@ const { isAuthenticated, isAdmin } = require("../middleware/auth-middleware");
 
 const router = express.Router();
 
+// 2FA endpoints for admin (public, before auth middleware)
+router.post("/security/2fa/request", adminController.request2FACode); // { email }
+router.post("/security/2fa/verify", adminController.verify2FACode); // { email, code }
+
 // Apply authentication and admin role check middleware to all routes
 router.use(isAuthenticated, isAdmin);
 
@@ -90,7 +94,10 @@ router.get("/fix/add-2fa-column", adminController.add2FAColumn);
 
 // 2FA endpoints for admin
 router.post("/security/2fa/enable", adminController.set2FA); // { enable: true/false }
-router.post("/security/2fa/request", adminController.request2FACode); // { email }
-router.post("/security/2fa/verify", adminController.verify2FACode); // { email, code }
+// router.post("/security/2fa/request", adminController.request2FACode); // { email }
+// router.post("/security/2fa/verify", adminController.verify2FACode); // { email, code }
+
+// TEMP: List all users and their is_2fa_enabled status for debugging
+router.get("/debug/users-2fa-status", adminController.listUsers2FAStatus);
 
 module.exports = router;

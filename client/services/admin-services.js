@@ -387,6 +387,63 @@ export const adminServices = {
     const response = await instance.get("/admin/dashboard/test");
     return response.data;
   },
+
+  // 2FA: Request code (no auth required)
+  request2FA: async ({ email }) => {
+    return axios.post(`${API_URL}/admin/security/2fa/request`, { email });
+  },
+  // 2FA: Verify code (no auth required)
+  verify2FA: async ({ email, code }) => {
+    return axios.post(`${API_URL}/admin/security/2fa/verify`, { email, code });
+  },
+  // 2FA: Enable 2FA for current admin
+  enable2FA: async () => {
+    const instance = createAuthInstance();
+    const response = await instance.post("/admin/security/2fa/enable", {
+      enable: true,
+    });
+    return response.data;
+  },
+  // 2FA: Disable 2FA for current admin
+  disable2FA: async () => {
+    const instance = createAuthInstance();
+    const response = await instance.post("/admin/security/2fa/enable", {
+      enable: false,
+    });
+    return response.data;
+  },
+  // Admin login with 2FA support
+  loginWith2FA: async ({ email, password }) => {
+    try {
+      const response = await axios.post(`${API_URL}/auth/login`, {
+        email,
+        password,
+      });
+      // If 2FA is required, backend returns { twoFARequired: true }
+      if (response.data.twoFARequired) {
+        return {
+          success: false,
+          error: "2FA still required",
+          twoFARequired: true,
+        };
+      }
+      // If login is successful, backend returns { token, ... }
+      if (response.data.auth) {
+        return {
+          success: true,
+          token: response.data.auth,
+          user: response.data.data,
+        };
+      }
+      // Otherwise, error
+      return { success: false, error: response.data.error || "Unknown error" };
+    } catch (err) {
+      return {
+        success: false,
+        error: err.response?.data?.error || err.message,
+      };
+    }
+  },
 };
 
 export default adminServices;

@@ -11,6 +11,7 @@ import { ThemeProvider, useTheme } from "./context/theme/ThemeContext";
 import SessionExpiredModalWrapper from "./components/common/SessionExpiredModalWrapper";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import AdminDashboard from "./pages/TechnicalAdmin/Dashboard";
+import TwoFAVerify from "./pages/TechnicalAdmin/TwoFAVerify";
 
 const AppContent = () => {
   const { isDarkMode } = useTheme();
@@ -42,6 +43,9 @@ const AppContent = () => {
               </ProtectedRoute>
             }
           />
+
+          {/* Technical Admin 2FA Verification Route */}
+          <Route path="/admin/2fa" element={<TwoFAVerify />} />
 
           {/* CTSC/ARWS Chair Routes */}
           <Route

@@ -11,6 +11,7 @@ const {
 } = require("../utils/email-service");
 const { generateRandomPassword } = require("../utils/password-utils");
 const e = require("express");
+const jwt = require("jsonwebtoken");
 
 // Helper to remove null fields from objects
 function removeNullFields(obj) {
@@ -1737,10 +1738,12 @@ const adminController = {
   },
 
   // Add is_2fa_enabled column to Users table (idempotent, raw SQL)
+  // NOTE: This column is present for all users, but only used for admins.
+  // This is standard practice in SQL databases for role-specific flags.
   async add2FAColumn(req, res) {
     try {
       await db.sequelize.query(
-        'ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS is_2fa_enabled BOOLEAN DEFAULT FALSE;'
+        'ALTER TABLE "Users" ADD COLUMN is_2fa_enabled BOOLEAN DEFAULT FALSE;'
       );
       return res
         .status(200)
@@ -1761,13 +1764,20 @@ async function set2FA(req, res) {
     const userId = req.user.user_id;
     const { enable } = req.body;
     const user = await db.User.findByPk(userId);
-    if (!user || user.role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Only admins can enable/disable 2FA.' });
+    if (!user || user.role !== "ADMIN") {
+      return res
+        .status(403)
+        .json({ error: "Only admins can enable/disable 2FA." });
     }
-    await db.User.update({ is_2fa_enabled: !!enable }, { where: { user_id: userId } });
-    return res.status(200).json({ message: `2FA ${enable ? 'enabled' : 'disabled'} for admin.` });
+    await db.User.update(
+      { is_2fa_enabled: !!enable },
+      { where: { user_id: userId } }
+    );
+    return res
+      .status(200)
+      .json({ message: `2FA ${enable ? "enabled" : "disabled"} for admin.` });
   } catch (error) {
-    console.error('Error setting 2FA:', error);
+    console.error("Error setting 2FA:", error);
     return res.status(500).json({ error: error.message });
   }
 }
@@ -1776,24 +1786,44 @@ async function set2FA(req, res) {
 async function request2FACode(req, res) {
   try {
     const { email } = req.body;
+    console.log("[2FA DEBUG] Requested email:", email);
     const user = await db.User.findOne({ where: { email } });
-    if (!user || user.role !== 'ADMIN' || !user.is_2fa_enabled) {
-      return res.status(400).json({ error: '2FA not enabled for this admin.' });
+    console.log(
+      "[2FA DEBUG] User found:",
+      user ? user.email : null,
+      "Role:",
+      user ? user.role : null,
+      "2FA Enabled:",
+      user ? user.is_2fa_enabled : null
+    );
+    if (!user || user.role !== "ADMIN" || !user.is_2fa_enabled) {
+      console.log("[2FA DEBUG] User not eligible for 2FA code.");
+      return res.status(400).json({ error: "2FA not enabled for this admin." });
     }
     // Generate 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log("[2FA DEBUG] Generated code:", code);
     // Store code with expiry (5 min)
-    twoFACodeStore[user.user_id] = { code, expires: Date.now() + 5 * 60 * 1000 };
+    twoFACodeStore[user.user_id] = {
+      code,
+      expires: Date.now() + 5 * 60 * 1000,
+    };
     // Send code via email
-    await require('../utils/email-service').sendMail({
-      to: user.email,
-      subject: 'Your Admin 2FA Verification Code',
-      text: `Your verification code is: ${code}`,
-      html: `<p>Your verification code is: <b>${code}</b></p>`
-    });
-    return res.status(200).json({ message: '2FA code sent to email.' });
+    try {
+      await require("../utils/email-service").sendMail({
+        to: user.email,
+        subject: "Your Admin 2FA Verification Code",
+        text: `Your verification code is: ${code}`,
+        html: `<p>Your verification code is: <b>${code}</b></p>`,
+      });
+      console.log("[2FA DEBUG] Email sent to:", user.email);
+    } catch (emailErr) {
+      console.error("[2FA DEBUG] Error sending 2FA email:", emailErr);
+      throw emailErr;
+    }
+    return res.status(200).json({ message: "2FA code sent to email." });
   } catch (error) {
-    console.error('Error sending 2FA code:', error);
+    console.error("[2FA DEBUG] Error in request2FACode:", error);
     return res.status(500).json({ error: error.message });
   }
 }
@@ -1803,22 +1833,61 @@ async function verify2FACode(req, res) {
   try {
     const { email, code } = req.body;
     const user = await db.User.findOne({ where: { email } });
-    if (!user || user.role !== 'ADMIN' || !user.is_2fa_enabled) {
-      return res.status(400).json({ error: '2FA not enabled for this admin.' });
+    if (!user || user.role !== "ADMIN" || !user.is_2fa_enabled) {
+      return res.status(400).json({ error: "2FA not enabled for this admin." });
     }
     const entry = twoFACodeStore[user.user_id];
     if (!entry || entry.code !== code) {
-      return res.status(400).json({ error: 'Invalid or expired 2FA code.' });
+      return res.status(400).json({ error: "Invalid or expired 2FA code." });
     }
     if (Date.now() > entry.expires) {
       delete twoFACodeStore[user.user_id];
-      return res.status(400).json({ error: '2FA code expired.' });
+      return res.status(400).json({ error: "2FA code expired." });
     }
     // Success: remove code
     delete twoFACodeStore[user.user_id];
-    return res.status(200).json({ message: '2FA verification successful.' });
+    // Issue JWT token (same as login)
+    const tokenPayload = {
+      id: user.user_id,
+      role: user.role,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+    };
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES,
+    });
+    // Optionally, you can return a user data object as in login
+    const userData = {
+      user_id: user.user_id,
+      email: user.email,
+      role: user.role,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      is_2fa_enabled: user.is_2fa_enabled,
+    };
+    return res
+      .status(200)
+      .json({
+        message: "2FA verification successful.",
+        auth: token,
+        data: userData,
+      });
   } catch (error) {
-    console.error('Error verifying 2FA code:', error);
+    console.error("Error verifying 2FA code:", error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+// TEMP: List all users and their is_2fa_enabled status for debugging
+async function listUsers2FAStatus(req, res) {
+  try {
+    const users = await db.User.findAll({
+      attributes: ["user_id", "email", "role", "is_2fa_enabled"],
+    });
+    return res.status(200).json({ users });
+  } catch (error) {
+    console.error("[2FA DEBUG] Error listing users:", error);
     return res.status(500).json({ error: error.message });
   }
 }
@@ -1829,4 +1898,5 @@ module.exports = {
   set2FA,
   request2FACode,
   verify2FACode,
+  listUsers2FAStatus, // TEMP: export the new endpoint
 };
