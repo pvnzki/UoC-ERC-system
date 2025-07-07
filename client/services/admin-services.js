@@ -189,6 +189,18 @@ export const adminServices = {
     return response.data;
   },
 
+  // Remove single member from committee (for backward compatibility)
+  removeMemberFromCommittee: async (committeeId, memberId) => {
+    const instance = createAuthInstance();
+    const response = await instance.delete("/admin/committees/members", {
+      data: {
+        committeeId: committeeId,
+        memberIds: [memberId],
+      },
+    });
+    return response.data;
+  },
+
   // Application Review Services
   // Get applications with pagination and filtering
   getApplications: async (params = {}) => {

@@ -35,7 +35,8 @@ const CommitteeList = ({ committees, onCommitteeUpdated }) => {
   const fetchCommitteesWithMembers = async () => {
     try {
       setLoading(true);
-      const committeesData = await adminServices.getCommittees();
+      // Use getCommitteesWithMembers to get members included
+      const committeesData = await adminServices.getCommitteesWithMembers();
       setCommitteesWithMembers(committeesData);
     } catch (error) {
       console.error("Error fetching committees:", error);
@@ -56,9 +57,23 @@ const CommitteeList = ({ committees, onCommitteeUpdated }) => {
   };
 
   // Handle add members to committee
-  const handleAddMembers = (committee) => {
-    setSelectedCommittee(committee);
-    setShowAddMembersModal(true);
+  const handleAddMembers = async (committee) => {
+    // Fetch the latest committee details before opening the modal
+    try {
+      setLoading(true);
+      const latestCommittees = await adminServices.getCommitteesWithMembers();
+      const latestCommittee = latestCommittees.find(
+        (c) => c.committee_id === committee.committee_id
+      );
+      setSelectedCommittee(latestCommittee || committee); // fallback to old if not found
+      setShowAddMembersModal(true);
+    } catch (error) {
+      toast.error("Failed to fetch latest committee data");
+      setSelectedCommittee(committee);
+      setShowAddMembersModal(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Handle members added successfully

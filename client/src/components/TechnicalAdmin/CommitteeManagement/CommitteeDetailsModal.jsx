@@ -263,14 +263,14 @@ const CommitteeDetailsModal = ({
                               isDarkMode ? "text-white" : "text-gray-900"
                             }`}
                           >
-                            {member.first_name} {member.last_name}
+                            {member.user.first_name} {member.user.last_name}
                           </p>
                           <p
                             className={`text-sm ${
                               isDarkMode ? "text-gray-400" : "text-gray-500"
                             }`}
                           >
-                            {member.email}
+                            {member.user.email}
                           </p>
                           <p
                             className={`text-xs ${
@@ -282,7 +282,7 @@ const CommitteeDetailsModal = ({
                         </div>
                       </div>
                       <button
-                        onClick={() => handleRemoveMember(member.member_id)}
+                        onClick={() => handleRemoveMember(member.user.user_id)}
                         className={`p-2 rounded-lg transition-all duration-300 ${
                           isDarkMode
                             ? "text-red-400 hover:text-red-300 hover:bg-red-900/30"

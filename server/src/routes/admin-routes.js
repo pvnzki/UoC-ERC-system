@@ -85,4 +85,12 @@ router.get("/dashboard/test", adminController.testDashboard); //test dashboard f
 //get analytics data
 router.get("/analytics", adminController.getAnalyticsData);
 
+// Add 2FA column to Users table (one-time fix route)
+router.get("/fix/add-2fa-column", adminController.add2FAColumn);
+
+// 2FA endpoints for admin
+router.post("/security/2fa/enable", adminController.set2FA); // { enable: true/false }
+router.post("/security/2fa/request", adminController.request2FACode); // { email }
+router.post("/security/2fa/verify", adminController.verify2FACode); // { email, code }
+
 module.exports = router;

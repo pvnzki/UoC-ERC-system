@@ -696,10 +696,13 @@ const adminController = {
 
   // 3.1.6 Group committee members
   async createCommittee(req, res) {
+    console.log("[DEBUG] Received body in createCommittee:", req.body);
     try {
-      const { name, type } = req.body;
-
-      if (!name || !type) {
+      // Accept both camelCase and snake_case for compatibility
+      const committee_name = req.body.committee_name || req.body.committeeName;
+      const committee_type = req.body.committee_type || req.body.committeeType;
+      const description = req.body.description || null;
+      if (!committee_name || !committee_type) {
         return res
           .status(400)
           .json({ error: "Committee name and type are required" });
@@ -714,13 +717,33 @@ const adminController = {
       const nextId = maxIdResult.next_id;
 
       // Insert committee with explicit ID, using the correct column names
-      await db.sequelize.query(`
-      INSERT INTO "Committees" (
-        committee_id, committee_name, committee_type
-      ) VALUES (
-        ${nextId}, '${name}', '${type}'
-      )
-    `);
+      // If description column exists, include it; otherwise, ignore
+      try {
+        await db.sequelize.query(
+          `INSERT INTO "Committees" (
+            committee_id, committee_name, committee_type${description !== null ? ", description" : ""}
+          ) VALUES (
+            ${nextId}, '${committee_name}', '${committee_type}'${description !== null ? ", '" + description.replace(/'/g, "''") + "'" : ""}
+          )`
+        );
+      } catch (insertErr) {
+        // If description column doesn't exist, try without it
+        if (
+          description !== null &&
+          insertErr.message &&
+          insertErr.message.includes("description")
+        ) {
+          await db.sequelize.query(
+            `INSERT INTO "Committees" (
+              committee_id, committee_name, committee_type
+            ) VALUES (
+              ${nextId}, '${committee_name}', '${committee_type}'
+            )`
+          );
+        } else {
+          throw insertErr;
+        }
+      }
 
       return res.status(201).json({
         message: "Committee created successfully",
@@ -739,13 +762,8 @@ const adminController = {
         attributes: ["committee_id", "committee_name", "committee_type"],
         order: [["committee_id", "ASC"]],
       });
-      if (!committees || committees.length === 0) {
-        return res.status(404).json({ error: "No committees found" });
-      }
-      // Return the list of committees
-      console.log("=== Committees ===");
-      console.log(committees);
-      console.log("===================");
+      // Always return 200 with an array, even if empty
+      // (Frontend should handle empty array as 'no committees')
       return res.status(200).json(committees);
     } catch (error) {
       console.error("Error fetching committees:", error);
@@ -919,14 +937,17 @@ const adminController = {
   async testDashboard(req, res) {
     try {
       // Test basic query
-      const testResult = await db.sequelize.query("SELECT COUNT(*) as count FROM \"Applications\"", {
-        type: db.sequelize.QueryTypes.SELECT,
-      });
-      
+      const testResult = await db.sequelize.query(
+        'SELECT COUNT(*) as count FROM "Applications"',
+        {
+          type: db.sequelize.QueryTypes.SELECT,
+        }
+      );
+
       return res.status(200).json({
         message: "Dashboard test successful",
         applicationCount: testResult[0].count,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       console.error("Dashboard test failed:", error);
@@ -1054,6 +1075,7 @@ const adminController = {
 
   async addMembersToCommittee(req, res) {
     try {
+      console.log("[DEBUG] addMembersToCommittee - Request body:", req.body);
       const { committeeId, members } = req.body;
       console.log("=== BACKEND: addMembersToCommittee called ===");
       console.log("Committee ID:", committeeId);
@@ -1156,29 +1178,37 @@ const adminController = {
       }
 
       if (errors.length > 0) {
+        console.log("[DEBUG] addMembersToCommittee - Errors:", errors);
         return res.status(207).json({
           message: "Some members could not be added.",
           errors,
           added: committeeMembers.map((m) => m.user_id),
         });
       }
-
-      console.log("=== END BACKEND DEBUG ===");
+      console.log(
+        "[DEBUG] addMembersToCommittee - Success, added:",
+        committeeMembers.map((m) => m.user_id)
+      );
       return res.status(200).json({
         message: "Members added to committee successfully",
         added: committeeMembers.map((m) => m.user_id),
       });
     } catch (error) {
-      console.error("Error adding members to committee:", error);
-      return res
-        .status(500)
-        .json({ error: "Failed to add members to committee" });
+      console.error("[DEBUG] addMembersToCommittee - Error:", error);
+      return res.status(500).json({
+        error: "Failed to add members to committee",
+        details: error.message,
+      });
     }
   },
 
   // Remove members from committee
   async removeMembersFromCommittee(req, res) {
     try {
+      console.log(
+        "[DEBUG] removeMembersFromCommittee - Request body:",
+        req.body
+      );
       const { committeeId, memberIds } = req.body;
 
       // Use raw SQL to check committee existence
@@ -1255,22 +1285,27 @@ const adminController = {
       }
 
       if (errors.length > 0) {
+        console.log("[DEBUG] removeMembersFromCommittee - Errors:", errors);
         return res.status(207).json({
           message: "Some members could not be removed.",
           errors,
           removed: successfulRemovals.map((r) => r.user.user_id),
         });
       }
-
+      console.log(
+        "[DEBUG] removeMembersFromCommittee - Success, removed:",
+        successfulRemovals.map((r) => r.user.user_id)
+      );
       return res.status(200).json({
         message: "Members removed from committee successfully",
         removed: successfulRemovals.map((r) => r.user.user_id),
       });
     } catch (error) {
-      console.error("Error removing members from committee:", error);
-      return res
-        .status(500)
-        .json({ error: "Failed to remove members from committee" });
+      console.error("[DEBUG] removeMembersFromCommittee - Error:", error);
+      return res.status(500).json({
+        error: "Failed to remove members from committee",
+        details: error.message,
+      });
     }
   },
 
@@ -1518,7 +1553,7 @@ const adminController = {
           LEFT JOIN "Committees" c ON cm.committee_id = c.committee_id
           ORDER BY cm.created_at DESC
           LIMIT 5
-        `,
+          `,
           { type: db.sequelize.QueryTypes.SELECT }
         );
 
@@ -1527,8 +1562,8 @@ const adminController = {
           activities.push({
             id: `meeting_${meeting.meeting_id}`,
             type: "meeting",
-            action: `Committee meeting ${meeting.status.toLowerCase()}`,
-            committee: meeting.committee_name || "Unknown Committee",
+            action: `Meeting ${meeting.status.toLowerCase()}`,
+            user: `${meeting.committee_name} Committee`,
             time: new Date(meeting.created_at).toLocaleDateString(),
             status: meeting.status.toLowerCase(),
             timestamp: new Date(meeting.created_at).getTime(),
@@ -1538,246 +1573,260 @@ const adminController = {
         console.error("Error fetching recent meetings:", error);
       }
 
-      // Get recent user registrations with error handling
-      try {
-        const recentUsers = await db.sequelize.query(
-          `
-          SELECT 
-            user_id,
-            first_name,
-            last_name,
-            role,
-            created_at
-          FROM "Users"
-          ORDER BY created_at DESC
-          LIMIT 5
-        `,
-          { type: db.sequelize.QueryTypes.SELECT }
-        );
-
-        // Add user activities
-        recentUsers.forEach((user, index) => {
-          activities.push({
-            id: `user_${user.user_id}`,
-            type: "user",
-            action: `New ${user.role.toLowerCase()} registered`,
-            user: `${user.first_name} ${user.last_name}`,
-            time: new Date(user.created_at).toLocaleDateString(),
-            status: "completed",
-            timestamp: new Date(user.created_at).getTime(),
-          });
-        });
-      } catch (error) {
-        console.error("Error fetching recent users:", error);
-      }
-
-      // Sort by timestamp and take the most recent
+      // Sort activities by timestamp
       activities.sort((a, b) => b.timestamp - a.timestamp);
-      const recentActivities = activities.slice(0, limit);
 
-      return res.status(200).json(recentActivities);
+      return res.status(200).json(activities);
     } catch (error) {
       console.error("Error fetching recent activities:", error);
-      return res
-        .status(500)
-        .json({ error: "Failed to fetch recent activities" });
+      return res.status(500).json({ error: error.message });
     }
   },
 
-  // Analytics endpoints
+  // Admin Analytics
   async getAnalyticsData(req, res) {
     try {
-      const { timeRange = "30d" } = req.query;
-      
-      // Get application trends over time
-      let applicationTrends = [];
-      try {
-        applicationTrends = await db.sequelize.query(
-          `
-          SELECT 
-            DATE_TRUNC('month', "submission_date") as month,
-            COUNT(*) as submitted,
-            COUNT(CASE WHEN status = 'APPROVED' THEN 1 END) as approved,
-            COUNT(CASE WHEN status = 'REJECTED' THEN 1 END) as rejected
-          FROM "Applications"
-          WHERE "submission_date" >= NOW() - INTERVAL '12 months'
-          GROUP BY DATE_TRUNC('month', "submission_date")
-          ORDER BY month
-        `,
-          { type: db.sequelize.QueryTypes.SELECT }
-        );
-      } catch (error) {
-        console.error("Error fetching application trends:", error);
+      // Users
+      const totalUsers = await db.User.count();
+      const activeUsers = await db.User.count({ where: { validity: true } });
+      const blockedUsers = await db.User.count({ where: { validity: false } });
+
+      // Committees
+      const totalCommittees = await db.Committee.count();
+      const committeesByTypeRaw = await db.Committee.findAll({
+        attributes: [
+          "committee_type",
+          [db.Sequelize.fn("COUNT", db.Sequelize.col("committee_id")), "count"],
+        ],
+        group: ["committee_type"],
+        raw: true,
+      });
+      const committeesByType = {};
+      if (Array.isArray(committeesByTypeRaw)) {
+        committeesByTypeRaw.forEach((row) => {
+          if (row && row.committee_type && row.count !== undefined) {
+            committeesByType[row.committee_type] = parseInt(row.count);
+          }
+        });
       }
 
-      // Get committee performance
-      let committeePerformance = [];
-      try {
-        committeePerformance = await db.sequelize.query(
-          `
-          SELECT 
-            c.committee_name as name,
-            COUNT(a.application_id) as applications,
-            ROUND(
-              (COUNT(CASE WHEN a.status = 'APPROVED' THEN 1 END) * 100.0 / COUNT(a.application_id)), 1
-            ) as approval_rate,
-            ROUND(
-              AVG(EXTRACT(EPOCH FROM (a.last_updated - a.submission_date))/86400), 1
-            ) as avg_time
-          FROM "Committees" c
-          LEFT JOIN "Applications" a ON c.committee_id = a.assigned_committee_id
-          GROUP BY c.committee_id, c.committee_name
-          ORDER BY applications DESC
-        `,
-          { type: db.sequelize.QueryTypes.SELECT }
-        );
-      } catch (error) {
-        console.error("Error fetching committee performance:", error);
+      // Applications
+      const totalApplications = await db.Application.count();
+      const applicationsByStatusRaw = await db.Application.findAll({
+        attributes: [
+          "status",
+          [
+            db.Sequelize.fn("COUNT", db.Sequelize.col("application_id")),
+            "count",
+          ],
+        ],
+        group: ["status"],
+        raw: true,
+      });
+      const applicationsByStatus = {};
+      if (Array.isArray(applicationsByStatusRaw)) {
+        applicationsByStatusRaw.forEach((row) => {
+          if (row && row.status && row.count !== undefined) {
+            applicationsByStatus[row.status] = parseInt(row.count);
+          }
+        });
       }
 
-      // Get category distribution
-      let categoryDistribution = [];
-      try {
-        categoryDistribution = await db.sequelize.query(
-          `
-          SELECT 
-            research_type as category,
-            COUNT(*) as count,
-            ROUND((COUNT(*) * 100.0 / (SELECT COUNT(*) FROM "Applications")), 1) as percentage
-          FROM "Applications"
-          GROUP BY research_type
-          ORDER BY count DESC
-        `,
-          { type: db.sequelize.QueryTypes.SELECT }
-        );
-      } catch (error) {
-        console.error("Error fetching category distribution:", error);
+      // Applications per committee
+      const applicationsPerCommitteeRaw = await db.Application.findAll({
+        attributes: [
+          "assigned_committee_id",
+          [
+            db.Sequelize.fn("COUNT", db.Sequelize.col("application_id")),
+            "count",
+          ],
+        ],
+        group: ["assigned_committee_id"],
+        raw: true,
+      });
+      const applicationsPerCommittee = {};
+      if (Array.isArray(applicationsPerCommitteeRaw)) {
+        applicationsPerCommitteeRaw.forEach((row) => {
+          if (
+            row &&
+            row.assigned_committee_id !== undefined &&
+            row.count !== undefined
+          ) {
+            applicationsPerCommittee[row.assigned_committee_id] = parseInt(
+              row.count
+            );
+          }
+        });
       }
 
-      // Get processing times trend
-      let processingTimes = [];
-      try {
-        processingTimes = await db.sequelize.query(
-          `
-          SELECT 
-            DATE_TRUNC('month', "submission_date") as month,
-            ROUND(
-              AVG(EXTRACT(EPOCH FROM (last_updated - submission_date))/86400), 1
-            ) as average_days
-          FROM "Applications"
-          WHERE status IN ('APPROVED', 'REJECTED') 
-            AND last_updated IS NOT NULL 
-            AND "submission_date" >= NOW() - INTERVAL '12 months'
-          GROUP BY DATE_TRUNC('month', "submission_date")
-          ORDER BY month
-        `,
-          { type: db.sequelize.QueryTypes.SELECT }
-        );
-      } catch (error) {
-        console.error("Error fetching processing times:", error);
+      // Applications per month (last 12 months)
+      const applicationsPerMonthRaw = await db.sequelize.query(
+        `SELECT to_char(submission_date, 'YYYY-MM') as month, COUNT(*) as count
+         FROM "Applications"
+         WHERE submission_date >= (CURRENT_DATE - INTERVAL '12 months')
+         GROUP BY month
+         ORDER BY month ASC`,
+        { type: db.sequelize.QueryTypes.SELECT }
+      );
+      const applicationsPerMonth = {};
+      if (Array.isArray(applicationsPerMonthRaw)) {
+        applicationsPerMonthRaw.forEach((row) => {
+          if (row && row.month && row.count !== undefined) {
+            applicationsPerMonth[row.month] = parseInt(row.count);
+          }
+        });
       }
+      console.log("[DEBUG] applicationsPerMonthRaw:", applicationsPerMonthRaw);
 
-      // Get user growth
-      let userGrowth = [];
-      try {
-        userGrowth = await db.sequelize.query(
-          `
-          SELECT 
-            DATE_TRUNC('month', "created_at") as month,
-            COUNT(*) as new_users,
-            COUNT(CASE WHEN validity = true THEN 1 END) as active_users
-          FROM "Users"
-          WHERE "created_at" >= NOW() - INTERVAL '12 months'
-          GROUP BY DATE_TRUNC('month', "created_at")
-          ORDER BY month
-        `,
-          { type: db.sequelize.QueryTypes.SELECT }
-        );
-      } catch (error) {
-        console.error("Error fetching user growth:", error);
-      }
+      // Meetings
+      const totalMeetings = await db.Meeting.count();
+      const upcomingMeetings = await db.Meeting.count({
+        where: { meeting_date: { [db.Sequelize.Op.gt]: new Date() } },
+      });
+      const completedMeetings = await db.Meeting.count({
+        where: { meeting_date: { [db.Sequelize.Op.lte]: new Date() } },
+      });
 
-      const analyticsData = {
-        applicationTrends: applicationTrends.map(trend => ({
-          month: new Date(trend.month).toLocaleDateString('en-US', { month: 'short' }),
-          submitted: parseInt(trend.submitted) || 0,
-          approved: parseInt(trend.approved) || 0,
-          rejected: parseInt(trend.rejected) || 0,
-        })),
-        committeePerformance: committeePerformance.map(committee => ({
-          name: committee.name,
-          applications: parseInt(committee.applications) || 0,
-          approvalRate: parseFloat(committee.approval_rate) || 0,
-          avgTime: parseFloat(committee.avg_time) || 0,
-        })),
-        categoryDistribution: categoryDistribution.map(category => ({
-          category: category.category,
-          count: parseInt(category.count) || 0,
-          percentage: parseFloat(category.percentage) || 0,
-        })),
-        processingTimes: processingTimes.map(time => ({
-          month: new Date(time.month).toLocaleDateString('en-US', { month: 'short' }),
-          averageDays: parseFloat(time.average_days) || 0,
-        })),
-        userGrowth: userGrowth.map(growth => ({
-          month: new Date(growth.month).toLocaleDateString('en-US', { month: 'short' }),
-          newUsers: parseInt(growth.new_users) || 0,
-          activeUsers: parseInt(growth.active_users) || 0,
-        })),
-      };
+      // Average application processing time (in days)
+      const avgProcessingRaw = await db.sequelize.query(
+        `SELECT AVG(EXTRACT(EPOCH FROM (last_updated - submission_date))/86400) as avg_days
+         FROM "Applications"
+         WHERE status IN ('APPROVED', 'REJECTED') AND last_updated IS NOT NULL`,
+        { type: db.sequelize.QueryTypes.SELECT }
+      );
+      const averageProcessingTime = avgProcessingRaw[0].avg_days
+        ? parseFloat(avgProcessingRaw[0].avg_days).toFixed(2)
+        : null;
 
-      return res.status(200).json(analyticsData);
+      // Approval rate
+      const approved = applicationsByStatus["APPROVED"] || 0;
+      const approvalRate =
+        totalApplications > 0
+          ? ((approved / totalApplications) * 100).toFixed(2)
+          : null;
+
+      // Build analytics object
+      return res.status(200).json({
+        users: {
+          total: totalUsers,
+          active: activeUsers,
+          blocked: blockedUsers,
+        },
+        committees: {
+          total: totalCommittees,
+          byType: committeesByType,
+        },
+        applications: {
+          total: totalApplications,
+          byStatus: applicationsByStatus,
+          perCommittee: applicationsPerCommittee,
+          perMonth: applicationsPerMonth,
+        },
+        meetings: {
+          total: totalMeetings,
+          upcoming: upcomingMeetings,
+          completed: completedMeetings,
+        },
+        averageProcessingTime,
+        approvalRate,
+      });
     } catch (error) {
       console.error("Error fetching analytics data:", error);
       return res.status(500).json({ error: "Failed to fetch analytics data" });
     }
   },
 
-  // Get recent activities for analytics
-  async getRecentActivities(req, res) {
+  // Add is_2fa_enabled column to Users table (idempotent, raw SQL)
+  async add2FAColumn(req, res) {
     try {
-      const { limit = 10 } = req.query;
-      
-      let activities = [];
-      try {
-        activities = await db.sequelize.query(
-          `
-          SELECT 
-            'application' as type,
-            a.application_id as id,
-            a.status as action,
-            CONCAT(ap.first_name, ' ', ap.last_name) as user,
-            a.submission_date as time,
-            a.status as status
-          FROM "Applications" a
-          JOIN "Applicants" ap ON a.applicant_id = ap.applicant_id
-          ORDER BY a.submission_date DESC
-          LIMIT $1
-        `,
-          { 
-            type: db.sequelize.QueryTypes.SELECT,
-            replacements: [parseInt(limit)]
-          }
-        );
-      } catch (error) {
-        console.error("Error fetching recent activities:", error);
-      }
-
-      const formattedActivities = activities.map((activity, index) => ({
-        id: index + 1,
-        type: activity.type,
-        action: `Application ${activity.action}`,
-        user: activity.user,
-        time: new Date(activity.time).toLocaleDateString(),
-        status: activity.status,
-      }));
-
-      return res.status(200).json(formattedActivities);
+      await db.sequelize.query(
+        'ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS is_2fa_enabled BOOLEAN DEFAULT FALSE;'
+      );
+      return res
+        .status(200)
+        .json({ message: "is_2fa_enabled column added (or already exists)." });
     } catch (error) {
-      console.error("Error fetching recent activities:", error);
-      return res.status(500).json({ error: "Failed to fetch recent activities" });
+      console.error("Error adding is_2fa_enabled column:", error);
+      return res.status(500).json({ error: error.message });
     }
   },
 };
 
-module.exports = adminController;
+// In-memory store for 2FA codes (for demo; use Redis or DB in production)
+const twoFACodeStore = {};
+
+// Enable or disable 2FA for admin
+async function set2FA(req, res) {
+  try {
+    const userId = req.user.user_id;
+    const { enable } = req.body;
+    const user = await db.User.findByPk(userId);
+    if (!user || user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Only admins can enable/disable 2FA.' });
+    }
+    await db.User.update({ is_2fa_enabled: !!enable }, { where: { user_id: userId } });
+    return res.status(200).json({ message: `2FA ${enable ? 'enabled' : 'disabled'} for admin.` });
+  } catch (error) {
+    console.error('Error setting 2FA:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+// Request a 2FA code (send via email)
+async function request2FACode(req, res) {
+  try {
+    const { email } = req.body;
+    const user = await db.User.findOne({ where: { email } });
+    if (!user || user.role !== 'ADMIN' || !user.is_2fa_enabled) {
+      return res.status(400).json({ error: '2FA not enabled for this admin.' });
+    }
+    // Generate 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // Store code with expiry (5 min)
+    twoFACodeStore[user.user_id] = { code, expires: Date.now() + 5 * 60 * 1000 };
+    // Send code via email
+    await require('../utils/email-service').sendMail({
+      to: user.email,
+      subject: 'Your Admin 2FA Verification Code',
+      text: `Your verification code is: ${code}`,
+      html: `<p>Your verification code is: <b>${code}</b></p>`
+    });
+    return res.status(200).json({ message: '2FA code sent to email.' });
+  } catch (error) {
+    console.error('Error sending 2FA code:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+// Verify 2FA code
+async function verify2FACode(req, res) {
+  try {
+    const { email, code } = req.body;
+    const user = await db.User.findOne({ where: { email } });
+    if (!user || user.role !== 'ADMIN' || !user.is_2fa_enabled) {
+      return res.status(400).json({ error: '2FA not enabled for this admin.' });
+    }
+    const entry = twoFACodeStore[user.user_id];
+    if (!entry || entry.code !== code) {
+      return res.status(400).json({ error: 'Invalid or expired 2FA code.' });
+    }
+    if (Date.now() > entry.expires) {
+      delete twoFACodeStore[user.user_id];
+      return res.status(400).json({ error: '2FA code expired.' });
+    }
+    // Success: remove code
+    delete twoFACodeStore[user.user_id];
+    return res.status(200).json({ message: '2FA verification successful.' });
+  } catch (error) {
+    console.error('Error verifying 2FA code:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+module.exports = {
+  ...adminController,
+  add2FAColumn: adminController.add2FAColumn,
+  set2FA,
+  request2FACode,
+  verify2FACode,
+};
