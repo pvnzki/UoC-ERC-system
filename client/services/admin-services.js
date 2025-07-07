@@ -99,7 +99,8 @@ export const adminServices = {
   updateUserStatus: async (userId, action) => {
     const instance = createAuthInstance();
     // Map action to validity boolean
-    const validity = action === "unblock" ? true : false;
+    const validity =
+      action === "activate" || action === "unblock" ? true : false;
     const reason =
       action === "block" ? "User blocked by admin" : "User activated by admin";
 

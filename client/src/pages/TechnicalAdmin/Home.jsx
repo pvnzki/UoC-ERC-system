@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Loader2, AlertCircle } from "lucide-react";
-import ApplicationList from "../../components/TechnicalAdmin/ApplicationList/ApplicationList.jsx";
+import ApplicationList from "../../components/TechnicalAdmin/ApplicationReview/ApplicationList.jsx";
 import { adminServices } from "../../../services/admin-services";
 
 const Home = () => {
@@ -55,20 +55,31 @@ const Home = () => {
     );
   }
 
-  // Transform the data to match the expected format
-  const transformedData = applications.map((app) => ({
-    id: app.application_id?.toString() || app.id?.toString() || "N/A",
-    name: app.applicant
-      ? `${app.applicant.first_name || ""} ${
-          app.applicant.last_name || ""
-        }`.trim()
-      : "Unknown Applicant",
-    date: app.created_at ? new Date(app.created_at).toLocaleString() : "N/A",
-    category: app.research_category || app.category || "N/A",
+  // Transform the data to match the expected format for ApplicationReview's ApplicationList
+  const transformedApplications = applications.map((app) => ({
+    application_id: app.application_id || app.id || "N/A",
+    applicant: app.applicant || {
+      first_name: "Unknown",
+      last_name: "Applicant",
+    },
+    submission_date: app.created_at || new Date().toISOString(),
+    research_type: app.research_category || app.category || "N/A",
     status: app.status || "Pending",
   }));
 
-  return <ApplicationList data={transformedData} />;
+  // Handler for view action (dummy for now)
+  const handleViewApplication = (id) => {
+    // You can implement navigation or modal logic here
+    // For now, just log
+    console.log("View application", id);
+  };
+
+  return (
+    <ApplicationList
+      applications={transformedApplications}
+      onViewApplication={handleViewApplication}
+    />
+  );
 };
 
 export default Home;

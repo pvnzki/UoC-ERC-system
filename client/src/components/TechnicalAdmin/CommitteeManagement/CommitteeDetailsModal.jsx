@@ -9,6 +9,7 @@ import {
   Mail,
   Shield,
   Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { useTheme } from "../../../context/theme/ThemeContext";
 
@@ -19,6 +20,8 @@ const CommitteeDetailsModal = ({
   onRemoveMember,
 }) => {
   const { isDarkMode } = useTheme();
+  const [showRemoveModal, setShowRemoveModal] = React.useState(false);
+  const [memberToRemove, setMemberToRemove] = React.useState(null);
 
   if (!isOpen || !committee) return null;
 
@@ -39,13 +42,21 @@ const CommitteeDetailsModal = ({
   };
 
   const handleRemoveMember = (memberId) => {
-    if (
-      window.confirm(
-        "Are you sure you want to remove this member from the committee?"
-      )
-    ) {
-      onRemoveMember(committee.committee_id, memberId);
+    setMemberToRemove(memberId);
+    setShowRemoveModal(true);
+  };
+
+  const handleConfirmRemove = () => {
+    if (memberToRemove) {
+      onRemoveMember(committee.committee_id, memberToRemove);
     }
+    setShowRemoveModal(false);
+    setMemberToRemove(null);
+  };
+
+  const handleCancelRemove = () => {
+    setShowRemoveModal(false);
+    setMemberToRemove(null);
   };
 
   const modalContent = (
@@ -381,7 +392,83 @@ const CommitteeDetailsModal = ({
     </div>
   );
 
-  return createPortal(modalContent, document.body);
+  const removeModal = showRemoveModal
+    ? createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            className="relative max-w-md w-full mx-4 rounded-2xl shadow-2xl border flex flex-col items-center"
+            style={{
+              background: isDarkMode
+                ? "linear-gradient(135deg, rgba(31,41,55,0.92), rgba(55,65,81,0.92))"
+                : "linear-gradient(135deg, rgba(255,255,255,0.85), rgba(249,250,251,0.85))",
+              backdropFilter: "blur(24px)",
+              WebkitBackdropFilter: "blur(24px)",
+              border: isDarkMode
+                ? "1.5px solid rgba(75,85,99,0.25)"
+                : "1.5px solid rgba(229,231,235,0.25)",
+              boxShadow: isDarkMode
+                ? "0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.08)"
+                : "0 8px 32px rgba(0,0,0,0.10), 0 0 0 1px rgba(255,255,255,0.10)",
+            }}
+          >
+            <div className="flex flex-col items-center w-full px-6 pt-7 pb-6">
+              <div
+                className={`flex items-center justify-center mb-4 rounded-full shadow-lg border-2 ${
+                  isDarkMode
+                    ? "bg-orange-900/60 border-orange-700/60"
+                    : "bg-orange-100 border-orange-200"
+                }`}
+                style={{ width: 54, height: 54 }}
+              >
+                <AlertTriangle className="w-7 h-7 text-orange-500" />
+              </div>
+              <h3
+                className={`text-xl font-bold mb-2 text-center ${
+                  isDarkMode ? "text-white" : "text-gray-900"
+                }`}
+              >
+                Remove Committee Member
+              </h3>
+              <p
+                className={`mb-4 text-base text-center ${
+                  isDarkMode ? "text-gray-300" : "text-gray-600"
+                }`}
+              >
+                Are you sure you want to remove this member from the committee?
+                This action cannot be undone.
+              </p>
+              <div className="flex w-full justify-end gap-3 mt-2">
+                <button
+                  onClick={handleCancelRemove}
+                  className={`px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                    isDarkMode
+                      ? "bg-transparent border-gray-600 text-gray-300 hover:bg-gray-700/60 hover:text-white focus:ring-gray-500"
+                      : "bg-transparent border-gray-300 text-gray-700 hover:bg-gray-100 focus:ring-blue-300"
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmRemove}
+                  className="px-4 py-2 rounded-lg transition-all duration-200 text-white text-sm font-medium flex items-center gap-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 bg-orange-500 hover:bg-orange-600 focus:ring-orange-400"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )
+    : null;
+
+  return (
+    <>
+      {createPortal(modalContent, document.body)}
+      {removeModal}
+    </>
+  );
 };
 
 export default CommitteeDetailsModal;
