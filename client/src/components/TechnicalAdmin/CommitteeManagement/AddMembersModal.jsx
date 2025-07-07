@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Users, User, Plus, Search } from "lucide-react";
 import { adminServices } from "../../../../services/admin-services";
 import { toast } from "react-toastify";
@@ -117,29 +118,46 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  const modalContent = (
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50 p-4">
       <div
-        className={`rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto ${
-          isDarkMode ? "bg-gray-800" : "bg-white"
-        }`}
+        className="max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto rounded-xl"
+        style={{
+          background: isDarkMode
+            ? "linear-gradient(135deg, rgba(31, 41, 55, 0.7), rgba(55, 65, 81, 0.7))"
+            : "linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(249, 250, 251, 0.7))",
+          backdropFilter: "blur(25px)",
+          WebkitBackdropFilter: "blur(25px)",
+          border: isDarkMode
+            ? "1px solid rgba(75, 85, 99, 0.2)"
+            : "1px solid rgba(229, 231, 235, 0.3)",
+          boxShadow: isDarkMode
+            ? "0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05)"
+            : "0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+        }}
       >
         {/* Header */}
         <div
-          className={`flex items-center justify-between p-6 border-b ${
-            isDarkMode ? "border-gray-600" : "border-gray-200"
+          className={`flex items-center justify-between p-4 border-b ${
+            isDarkMode ? "border-gray-700/50" : "border-gray-200/50"
           }`}
         >
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Users className="w-6 h-6 text-green-600" />
+            <div
+              className={`p-2 rounded-lg ${
+                isDarkMode
+                  ? "bg-green-900/30 border border-green-700/50"
+                  : "bg-green-50 border border-green-200"
+              }`}
+            >
+              <Users
+                className={`w-5 h-5 ${
+                  isDarkMode ? "text-green-400" : "text-green-600"
+                }`}
+              />
             </div>
             <div>
-              <h2
-                className={`text-xl font-semibold ${
-                  isDarkMode ? "text-white" : "text-gray-900"
-                }`}
-              >
+              <h2 className="text-lg font-semibold">
                 Add Members to Committee
               </h2>
               <p
@@ -153,10 +171,10 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
           </div>
           <button
             onClick={onClose}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`p-2 rounded-lg transition-all duration-300 ${
               isDarkMode
-                ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700"
-                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700/50"
+                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
             }`}
           >
             <X className="w-5 h-5" />
@@ -164,22 +182,22 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4">
           <form onSubmit={handleSubmit}>
             {/* Search */}
-            <div className="mb-6">
+            <div className="mb-4">
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
+                  <Search className="h-4 w-4 text-gray-400" />
                 </div>
                 <input
                   type="text"
-                  className={`block w-full pl-10 pr-3 py-2 border rounded-md leading-5 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                  className={`block w-full pl-10 pr-3 py-2 border rounded-lg leading-5 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm ${
                     isDarkMode
-                      ? "border-gray-600 bg-gray-700 text-white placeholder-gray-400"
-                      : "border-gray-300 bg-white"
+                      ? "border-gray-600/50 bg-gray-700/50 text-white placeholder-gray-400"
+                      : "border-gray-300/50 bg-gray-50/50 text-gray-900"
                   }`}
-                  placeholder="Search committee members by name, email, or ID..."
+                  placeholder="Search committee members..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -189,10 +207,10 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
             {/* Selected Users Summary */}
             {selectedUsers.length > 0 && (
               <div
-                className={`mb-6 p-4 rounded-lg ${
+                className={`mb-4 p-3 rounded-lg ${
                   isDarkMode
-                    ? "bg-blue-900/30 border border-blue-700"
-                    : "bg-blue-50"
+                    ? "bg-blue-900/30 border border-blue-700/50"
+                    : "bg-blue-50/50 border border-blue-200/50"
                 }`}
               >
                 <h3
@@ -207,95 +225,57 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
                     const user = users.find(
                       (u) => u.user_id === selectedUser.userId
                     );
-                    return user ? (
+                    return (
                       <div
                         key={selectedUser.userId}
-                        className={`flex items-center justify-between p-2 rounded border ${
-                          isDarkMode
-                            ? "bg-gray-700 border-gray-600"
-                            : "bg-white border-gray-200"
+                        className={`flex items-center justify-between p-2 rounded ${
+                          isDarkMode ? "bg-blue-800/30" : "bg-blue-100/50"
                         }`}
                       >
-                        <div className="flex items-center space-x-3">
-                          <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                            <User className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <div>
-                            <p
-                              className={`text-sm font-medium ${
-                                isDarkMode ? "text-white" : "text-gray-900"
-                              }`}
-                            >
-                              {user.first_name} {user.last_name}
-                            </p>
-                            <p
-                              className={`text-xs ${
-                                isDarkMode ? "text-gray-400" : "text-gray-500"
-                              }`}
-                            >
-                              {user.email}
-                            </p>
-                          </div>
-                        </div>
                         <div className="flex items-center space-x-2">
-                          <select
-                            value={selectedUser.role}
-                            onChange={(e) =>
-                              handleRoleChange(
-                                selectedUser.userId,
-                                e.target.value
-                              )
-                            }
-                            className={`text-xs border rounded px-2 py-1 ${
-                              isDarkMode
-                                ? "border-gray-600 bg-gray-700 text-white"
-                                : "border-gray-300"
+                          <User
+                            className={`w-4 h-4 ${
+                              isDarkMode ? "text-blue-300" : "text-blue-600"
                             }`}
-                          >
-                            <option value="MEMBER">Member</option>
-                            <option value="CHAIR">Chair</option>
-                            <option value="SECRETARY">Secretary</option>
-                          </select>
-                          <button
-                            type="button"
-                            onClick={() => handleUserSelect(user)}
-                            className={`transition-colors ${
-                              isDarkMode
-                                ? "text-red-400 hover:text-red-300"
-                                : "text-red-600 hover:text-red-800"
-                            }`}
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
+                          />
+                          <span className="text-sm">
+                            {user?.first_name} {user?.last_name}
+                          </span>
                         </div>
+                        <select
+                          value={selectedUser.role}
+                          onChange={(e) =>
+                            handleRoleChange(
+                              selectedUser.userId,
+                              e.target.value
+                            )
+                          }
+                          className={`text-xs px-2 py-1 rounded border ${
+                            isDarkMode
+                              ? "bg-gray-700 border-gray-600 text-white"
+                              : "bg-white border-gray-300 text-gray-900"
+                          }`}
+                        >
+                          <option value="MEMBER">Member</option>
+                          <option value="CHAIR">Chair</option>
+                          <option value="SECRETARY">Secretary</option>
+                        </select>
                       </div>
-                    ) : null;
+                    );
                   })}
                 </div>
               </div>
             )}
 
-            {/* Available Users */}
-            <div className="mb-6">
-              <h3
-                className={`text-lg font-medium mb-4 ${
-                  isDarkMode ? "text-white" : "text-gray-900"
-                }`}
-              >
-                Available Committee Members
-              </h3>
-              <p
-                className={`text-sm mb-4 ${
-                  isDarkMode ? "text-gray-400" : "text-gray-600"
-                }`}
-              >
-                Only active committee members can be added to committees. Other
-                user types (admins, applicants, staff) are not shown.
-              </p>
-
+            {/* Users List */}
+            <div className="space-y-2 max-h-96 overflow-y-auto">
               {loading ? (
                 <div className="flex justify-center items-center h-32">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                  <div
+                    className={`animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 ${
+                      isDarkMode ? "border-blue-400" : "border-blue-500"
+                    }`}
+                  ></div>
                 </div>
               ) : filteredUsers.length === 0 ? (
                 <div
@@ -303,192 +283,137 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
                     isDarkMode ? "text-gray-400" : "text-gray-500"
                   }`}
                 >
-                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                  <p>No available committee members found.</p>
-                  <p className="text-sm mt-2">
-                    All committee members may already be assigned to this
-                    committee, or there are no active committee members in the
-                    system.
-                  </p>
+                  <Users
+                    className={`w-8 h-8 mx-auto mb-2 ${
+                      isDarkMode ? "text-gray-500" : "text-gray-400"
+                    }`}
+                  />
+                  <p className="text-sm">No available users found</p>
                 </div>
               ) : (
-                <div
-                  className={`border rounded-lg overflow-hidden ${
-                    isDarkMode
-                      ? "bg-gray-800 border-gray-600"
-                      : "bg-white border-gray-200"
-                  }`}
-                >
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead
-                      className={isDarkMode ? "bg-gray-700" : "bg-gray-50"}
-                    >
-                      <tr>
-                        <th
-                          className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                            isDarkMode ? "text-gray-300" : "text-gray-500"
+                filteredUsers.map((user) => (
+                  <div
+                    key={user.user_id}
+                    className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+                      isUserSelected(user.user_id)
+                        ? isDarkMode
+                          ? "bg-blue-900/30 border border-blue-700/50"
+                          : "bg-blue-50/50 border border-blue-200/50"
+                        : isDarkMode
+                        ? "bg-gray-700/50 border border-gray-600/50 hover:bg-gray-600/50"
+                        : "bg-gray-50/50 border border-gray-200/50 hover:bg-gray-100/50"
+                    }`}
+                    onClick={() => handleUserSelect(user)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className={`p-1 rounded ${
+                            isUserSelected(user.user_id)
+                              ? isDarkMode
+                                ? "bg-blue-800/50"
+                                : "bg-blue-100"
+                              : isDarkMode
+                              ? "bg-gray-600/50"
+                              : "bg-gray-200/50"
                           }`}
                         >
-                          Select
-                        </th>
-                        <th
-                          className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                            isDarkMode ? "text-gray-300" : "text-gray-500"
-                          }`}
-                        >
-                          User
-                        </th>
-                        <th
-                          className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                            isDarkMode ? "text-gray-300" : "text-gray-500"
-                          }`}
-                        >
-                          Email
-                        </th>
-                        <th
-                          className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                            isDarkMode ? "text-gray-300" : "text-gray-500"
-                          }`}
-                        >
-                          Role
-                        </th>
-                        <th
-                          className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                            isDarkMode ? "text-gray-300" : "text-gray-500"
-                          }`}
-                        >
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody
-                      className={`divide-y ${
-                        isDarkMode
-                          ? "bg-gray-800 divide-gray-600"
-                          : "bg-white divide-gray-200"
-                      }`}
-                    >
-                      {filteredUsers.map((user) => (
-                        <tr
-                          key={user.user_id}
-                          className={
-                            isDarkMode
-                              ? "hover:bg-gray-700"
-                              : "hover:bg-gray-50"
-                          }
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <input
-                              type="checkbox"
-                              checked={isUserSelected(user.user_id)}
-                              onChange={() => handleUserSelect(user)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            />
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10">
-                                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                  <User className="h-5 w-5 text-blue-600" />
-                                </div>
-                              </div>
-                              <div className="ml-4">
-                                <div
-                                  className={`text-sm font-medium ${
-                                    isDarkMode ? "text-white" : "text-gray-900"
-                                  }`}
-                                >
-                                  {user.first_name} {user.last_name}
-                                </div>
-                                <div
-                                  className={`text-sm ${
-                                    isDarkMode
-                                      ? "text-gray-400"
-                                      : "text-gray-500"
-                                  }`}
-                                >
-                                  ID: {user.user_id}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td
-                            className={`px-6 py-4 whitespace-nowrap text-sm ${
-                              isDarkMode ? "text-gray-300" : "text-gray-500"
+                          <User
+                            className={`w-4 h-4 ${
+                              isUserSelected(user.user_id)
+                                ? isDarkMode
+                                  ? "text-blue-300"
+                                  : "text-blue-600"
+                                : isDarkMode
+                                ? "text-gray-400"
+                                : "text-gray-500"
+                            }`}
+                          />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">
+                            {user.first_name} {user.last_name}
+                          </p>
+                          <p
+                            className={`text-xs ${
+                              isDarkMode ? "text-gray-400" : "text-gray-500"
                             }`}
                           >
                             {user.email}
-                          </td>
-                          <td
-                            className={`px-6 py-4 whitespace-nowrap text-sm ${
-                              isDarkMode ? "text-gray-300" : "text-gray-500"
+                          </p>
+                        </div>
+                      </div>
+                      {isUserSelected(user.user_id) && (
+                        <div className="flex items-center space-x-2">
+                          <select
+                            value={getSelectedUserRole(user.user_id)}
+                            onChange={(e) =>
+                              handleRoleChange(user.user_id, e.target.value)
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                            className={`text-xs px-2 py-1 rounded border ${
+                              isDarkMode
+                                ? "bg-gray-700 border-gray-600 text-white"
+                                : "bg-white border-gray-300 text-gray-900"
                             }`}
                           >
-                            {user.role.replace(/_/g, " ")}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {user.validity ? (
-                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                Active
-                              </span>
-                            ) : (
-                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                Blocked
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                            <option value="MEMBER">Member</option>
+                            <option value="CHAIR">Chair</option>
+                            <option value="SECRETARY">Secretary</option>
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
               )}
             </div>
 
-            {/* Footer */}
+            {/* Actions */}
             <div
-              className={`flex justify-end space-x-3 pt-6 border-t ${
-                isDarkMode ? "border-gray-600" : "border-gray-200"
+              className={`mt-6 pt-4 border-t ${
+                isDarkMode ? "border-gray-700/50" : "border-gray-200/50"
               }`}
             >
-              <button
-                type="button"
-                onClick={onClose}
-                className={`px-4 py-2 border rounded-md transition-colors ${
-                  isDarkMode
-                    ? "border-gray-600 text-gray-300 hover:bg-gray-700"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                }`}
-                disabled={submitting}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={selectedUsers.length === 0 || submitting}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-              >
-                {submitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-                    <span>Adding...</span>
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4" />
-                    <span>
-                      Add {selectedUsers.length} Member
-                      {selectedUsers.length !== 1 ? "s" : ""}
-                    </span>
-                  </>
-                )}
-              </button>
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isDarkMode
+                      ? "text-gray-300 hover:text-gray-200 hover:bg-gray-700/50"
+                      : "text-gray-600 hover:text-gray-700 hover:bg-gray-100/50"
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting || selectedUsers.length === 0}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${
+                    isDarkMode
+                      ? "bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-600"
+                      : "bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400"
+                  }`}
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>
+                    {submitting
+                      ? "Adding..."
+                      : `Add ${selectedUsers.length} Member${
+                          selectedUsers.length !== 1 ? "s" : ""
+                        }`}
+                  </span>
+                </button>
+              </div>
             </div>
           </form>
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default AddMembersModal;

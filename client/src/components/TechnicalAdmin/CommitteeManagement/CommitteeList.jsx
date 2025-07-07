@@ -1,126 +1,92 @@
 // src/components/TechnicalAdmin/CommitteeManagement/CommitteeList.jsx
 import React, { useState, useEffect } from "react";
-import { Eye, Users, RefreshCw, Trash2 } from "lucide-react";
+import { createPortal } from "react-dom";
+import {
+  Users,
+  Building,
+  Eye,
+  UserPlus,
+  Trash2,
+  AlertTriangle,
+  Calendar,
+  Search,
+  Plus,
+  X,
+} from "lucide-react";
+import { useTheme } from "../../../context/theme/ThemeContext";
+import { adminServices } from "../../../../services/admin-services";
 import { toast } from "react-toastify";
 import CommitteeDetailsModal from "./CommitteeDetailsModal";
 import AddMembersModal from "./AddMembersModal";
-import { adminServices } from "../../../../services/admin-services";
-import { useTheme } from "../../../context/theme/ThemeContext";
 
 const CommitteeList = ({ committees, onCommitteeUpdated }) => {
   const { isDarkMode } = useTheme();
-  const [committeesWithMembers, setCommitteesWithMembers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState("");
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedCommittee, setSelectedCommittee] = useState(null);
   const [showAddMembersModal, setShowAddMembersModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedCommittee, setSelectedCommittee] = useState(null);
   const [committeeToDelete, setCommitteeToDelete] = useState(null);
+  const [committeesWithMembers, setCommitteesWithMembers] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Fetch committees with members
+  // Fetch committees with member details
   const fetchCommitteesWithMembers = async () => {
     try {
       setLoading(true);
-      const committeesData = await adminServices.getCommitteesWithMembers();
-      console.log("=== FRONTEND: Received committees data ===");
-      console.log("Raw data:", committeesData);
-
-      if (committeesData && Array.isArray(committeesData)) {
-        committeesData.forEach((committee, index) => {
-          console.log(`Committee ${index + 1}:`, {
-            committee_id: committee.committee_id,
-            committee_name: committee.committee_name,
-            member_count: committee.members ? committee.members.length : 0,
-            members: committee.members
-              ? committee.members.map((m) => ({
-                  member_id: m.member_id,
-                  user_id: m.user ? m.user.user_id : "N/A",
-                  user_name: m.user
-                    ? `${m.user.first_name} ${m.user.last_name}`
-                    : "N/A",
-                  role: m.role,
-                }))
-              : [],
-          });
-        });
-      }
-      console.log("=== END FRONTEND DEBUG ===");
-
-      setCommitteesWithMembers(committeesData || []);
+      const committeesData = await adminServices.getCommittees();
+      setCommitteesWithMembers(committeesData);
     } catch (error) {
-      console.error("Error fetching committees with members:", error);
-      toast.error("Failed to load committee details");
-      setCommitteesWithMembers([]);
+      console.error("Error fetching committees:", error);
+      toast.error("Failed to load committees");
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchCommitteesWithMembers();
+  }, []);
+
   // Handle view committee details
   const handleViewDetails = (committee) => {
-    console.log("Viewing details for committee:", committee);
-    console.log("Available committees with members:", committeesWithMembers);
-
-    const committeeWithMembers = committeesWithMembers.find(
-      (c) => c.committee_id === committee.committee_id
-    );
-    console.log("Found committee with members:", committeeWithMembers);
-
-    setSelectedCommittee(committeeWithMembers || committee);
+    setSelectedCommittee(committee);
     setShowDetailsModal(true);
   };
 
-  // Handle add members
+  // Handle add members to committee
   const handleAddMembers = (committee) => {
-    const committeeWithMembers = committeesWithMembers.find(
-      (c) => c.committee_id === committee.committee_id
-    );
-    setSelectedCommittee(committeeWithMembers || committee);
+    setSelectedCommittee(committee);
     setShowAddMembersModal(true);
   };
 
-  // Handle members added
+  // Handle members added successfully
   const handleMembersAdded = () => {
-    console.log("=== FRONTEND: handleMembersAdded called ===");
-    console.log("Refreshing committees data...");
-
-    // Force a fresh fetch with a small delay to ensure backend has processed the changes
-    setTimeout(() => {
-      console.log("Executing delayed refresh...");
-      fetchCommitteesWithMembers();
-    }, 500);
-
-    if (onCommitteeUpdated) {
-      console.log("Calling onCommitteeUpdated callback");
-      onCommitteeUpdated();
-    }
-    console.log("=== END FRONTEND DEBUG ===");
+    fetchCommitteesWithMembers();
+    onCommitteeUpdated();
   };
 
-  // Handle remove member
+  // Handle remove member from committee
   const handleRemoveMember = async (committeeId, memberId) => {
     try {
-      await adminServices.removeMembersFromCommittee({
-        committeeId,
-        memberIds: [memberId],
-      });
+      await adminServices.removeMemberFromCommittee(committeeId, memberId);
       toast.success("Member removed successfully");
       fetchCommitteesWithMembers();
-      if (onCommitteeUpdated) {
-        onCommitteeUpdated();
-      }
+      onCommitteeUpdated();
     } catch (error) {
       console.error("Error removing member:", error);
       toast.error("Failed to remove member");
     }
   };
 
-  // Close modals
+  // Handle close details modal
   const handleCloseDetailsModal = () => {
     setShowDetailsModal(false);
     setSelectedCommittee(null);
   };
 
+  // Handle close add members modal
   const handleCloseAddMembersModal = () => {
     setShowAddMembersModal(false);
     setSelectedCommittee(null);
@@ -132,86 +98,457 @@ const CommitteeList = ({ committees, onCommitteeUpdated }) => {
     setShowDeleteModal(true);
   };
 
+  // Handle confirm delete
   const handleConfirmDelete = async () => {
-    if (!committeeToDelete) return;
-
     try {
       const result = await adminServices.deleteCommittee(
         committeeToDelete.committee_id
       );
-      const summary = result.summary;
+
       let message = `Committee "${committeeToDelete.committee_name}" deleted successfully!`;
-
-      if (summary) {
-        const details = [];
-        if (summary.membersRemoved > 0) {
-          details.push(`${summary.membersRemoved} member(s) removed`);
-        }
-        if (summary.applicationsUnassigned > 0) {
-          details.push(
-            `${summary.applicationsUnassigned} application(s) unassigned`
-          );
-        }
-        if (summary.meetingsDeleted > 0) {
-          details.push(`${summary.meetingsDeleted} meeting(s) deleted`);
-        }
-
-        if (details.length > 0) {
-          message += ` (${details.join(", ")})`;
-        }
+      if (result.removedMembers > 0) {
+        message += ` ${result.removedMembers} members were removed.`;
+      }
+      if (result.unassignedApplications > 0) {
+        message += ` ${result.unassignedApplications} applications were unassigned.`;
+      }
+      if (result.deletedMeetings > 0) {
+        message += ` ${result.deletedMeetings} meetings were deleted.`;
       }
 
       toast.success(message);
       setShowDeleteModal(false);
       setCommitteeToDelete(null);
-
-      // Refresh the committees list
-      if (onCommitteeUpdated) {
-        onCommitteeUpdated();
-      }
+      fetchCommitteesWithMembers();
+      onCommitteeUpdated();
     } catch (error) {
       console.error("Error deleting committee:", error);
-      const errorMessage =
-        error.response?.data?.error || "Failed to delete committee";
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.error || "Failed to delete committee");
     }
   };
 
+  // Handle cancel delete
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
     setCommitteeToDelete(null);
   };
 
-  // Fetch committees with members on component mount
-  useEffect(() => {
-    fetchCommitteesWithMembers();
-  }, []);
+  // Reset filters
+  const resetFilters = () => {
+    setSearchQuery("");
+    setFilterType("");
+  };
+
+  // Get unique committee types for filter dropdown
+  const uniqueTypes = [
+    ...new Set(
+      committeesWithMembers.map((committee) => committee.committee_type)
+    ),
+  ].sort();
+
+  // Filter committees based on search query and filters
+  const filteredCommittees = committeesWithMembers.filter((committee) => {
+    const matchesSearch =
+      searchQuery === "" ||
+      committee.committee_name
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      committee.committee_id.toString().includes(searchQuery);
+
+    const matchesType =
+      filterType === "" || committee.committee_type === filterType;
+
+    return matchesSearch && matchesType;
+  });
+
+  const hasActiveFilters = searchQuery || filterType;
+
+  const deleteModalContent =
+    showDeleteModal && committeeToDelete ? (
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50 p-4">
+        <div
+          className="max-w-md w-full mx-4 rounded-xl"
+          style={{
+            background: isDarkMode
+              ? "linear-gradient(135deg, rgba(31, 41, 55, 0.7), rgba(55, 65, 81, 0.7))"
+              : "linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(249, 250, 251, 0.7))",
+            backdropFilter: "blur(25px)",
+            WebkitBackdropFilter: "blur(25px)",
+            border: isDarkMode
+              ? "1px solid rgba(75, 85, 99, 0.2)"
+              : "1px solid rgba(229, 231, 235, 0.3)",
+            boxShadow: isDarkMode
+              ? "0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05)"
+              : "0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+          }}
+        >
+          {/* Header */}
+          <div
+            className={`flex items-center justify-between p-4 border-b ${
+              isDarkMode ? "border-gray-700/50" : "border-gray-200/50"
+            }`}
+          >
+            <div className="flex items-center space-x-3">
+              <div
+                className={`p-2 rounded-lg ${
+                  isDarkMode
+                    ? "bg-red-900/30 border border-red-700/50"
+                    : "bg-red-50 border border-red-200"
+                }`}
+              >
+                <Trash2
+                  className={`w-5 h-5 ${
+                    isDarkMode ? "text-red-400" : "text-red-600"
+                  }`}
+                />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Delete Committee</h2>
+                <p
+                  className={`text-sm ${
+                    isDarkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
+                  This action cannot be undone
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleCancelDelete}
+              className={`p-2 rounded-lg transition-all duration-300 ${
+                isDarkMode
+                  ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700/50"
+                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
+              }`}
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="p-4">
+            <div className="mb-4">
+              <p
+                className={`mb-3 ${
+                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                Are you sure you want to delete the committee:
+              </p>
+              <div
+                className={`p-4 rounded-lg ${
+                  isDarkMode
+                    ? "bg-gray-700/50 border border-gray-600/50"
+                    : "bg-gray-50/50 border border-gray-200/50"
+                }`}
+              >
+                <p className="font-medium">
+                  {committeeToDelete.committee_name}
+                </p>
+                <p
+                  className={`text-sm ${
+                    isDarkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
+                  Type: {committeeToDelete.committee_type}
+                </p>
+                <p
+                  className={`text-sm ${
+                    isDarkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
+                  ID: {committeeToDelete.committee_id}
+                </p>
+              </div>
+            </div>
+
+            <div
+              className={`border rounded-lg p-4 mb-4 ${
+                isDarkMode
+                  ? "bg-blue-900/20 border-blue-700/30"
+                  : "bg-blue-50/80 border-blue-200/50"
+              }`}
+            >
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <AlertTriangle
+                    className={`h-5 w-5 ${
+                      isDarkMode ? "text-blue-400" : "text-blue-500"
+                    }`}
+                  />
+                </div>
+                <div className="ml-3">
+                  <h3
+                    className={`text-sm font-medium ${
+                      isDarkMode ? "text-blue-300" : "text-blue-800"
+                    }`}
+                  >
+                    What will happen:
+                  </h3>
+                  <div
+                    className={`mt-2 text-sm ${
+                      isDarkMode ? "text-blue-200" : "text-blue-700"
+                    }`}
+                  >
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>
+                        Committee members will be removed from this committee
+                      </li>
+                      <li>
+                        Applications assigned to this committee will be
+                        unassigned
+                      </li>
+                      <li>All committee meetings will be deleted</li>
+                      <li>The committee will be permanently deleted</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCancelDelete}
+                className={`px-4 py-2 rounded-lg transition-all duration-300 ${
+                  isDarkMode
+                    ? "bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 hover:text-white"
+                    : "bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-xl"
+              >
+                <Trash2 size={16} />
+                <span>Delete Committee</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    ) : null;
 
   return (
-    <div
-      className={`shadow-md rounded-lg overflow-hidden ${
-        isDarkMode ? "bg-gray-800" : "bg-white"
-      }`}
-    >
-      {/* Manual Refresh Button for Debugging */}
+    <>
       <div
-        className={`p-4 border-b ${
-          isDarkMode ? "border-gray-600" : "border-gray-200"
+        className={`rounded-lg backdrop-blur-xl border shadow-lg overflow-hidden ${
+          isDarkMode
+            ? "bg-gray-800/50 border-gray-700/50"
+            : "bg-white/70 border-gray-200/50"
         }`}
       >
-        <button
-          onClick={() => {
-            console.log("Manual refresh triggered");
-            fetchCommitteesWithMembers();
-          }}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        {/* Compact Filters Section */}
+        <div
+          className={`p-4 border-b ${
+            isDarkMode ? "border-gray-600/50" : "border-gray-200/50"
+          }`}
         >
-          <RefreshCw size={16} className="mr-2 inline" />
-          Refresh Committees
-        </button>
-        <span className="ml-2 text-sm text-gray-500">
-          (Debug: {committeesWithMembers.length} committees loaded)
-        </span>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+              <div className="relative">
+                <Search
+                  size={16}
+                  className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
+                    isDarkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                />
+                <input
+                  type="text"
+                  placeholder="Search committees..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={`pl-9 pr-3 py-2 rounded-lg border transition-all duration-300 ${
+                    isDarkMode
+                      ? "bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20"
+                      : "bg-gray-50/50 border-gray-300/50 text-gray-900 placeholder-gray-500 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20"
+                  }`}
+                />
+              </div>
+
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className={`px-3 py-2 rounded-lg border transition-all duration-300 ${
+                  isDarkMode
+                    ? "bg-gray-700/50 border-gray-600/50 text-white focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20"
+                    : "bg-gray-50/50 border-gray-300/50 text-gray-900 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20"
+                }`}
+              >
+                <option value="">All Types</option>
+                {uniqueTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              {hasActiveFilters && (
+                <button
+                  onClick={resetFilters}
+                  className={`px-3 py-2 rounded-lg transition-all duration-300 text-sm ${
+                    isDarkMode
+                      ? "bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 hover:text-white"
+                      : "bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  Clear Filters
+                </button>
+              )}
+
+              <span
+                className={`text-sm ${
+                  isDarkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                {filteredCommittees.length} committees
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Committees List */}
+        <div className="p-4">
+          {loading ? (
+            <div className="flex justify-center items-center h-32">
+              <div
+                className={`animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 ${
+                  isDarkMode ? "border-blue-400" : "border-blue-500"
+                }`}
+              ></div>
+            </div>
+          ) : filteredCommittees.length === 0 ? (
+            <div className="text-center py-12">
+              <Building
+                size={32}
+                className={`mx-auto mb-3 ${
+                  isDarkMode ? "text-gray-600" : "text-gray-400"
+                }`}
+              />
+              <p
+                className={`text-sm ${
+                  isDarkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                No committees found
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredCommittees.map((committee) => (
+                <div
+                  key={committee.committee_id}
+                  className={`p-4 rounded-lg transition-all duration-300 hover:scale-[1.01] ${
+                    isDarkMode
+                      ? "bg-gray-700/50 border border-gray-600/50 hover:bg-gray-600/50"
+                      : "bg-gray-50/50 border border-gray-200/50 hover:bg-gray-100/50"
+                  } shadow-md hover:shadow-lg`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4 flex-1 min-w-0">
+                      <div
+                        className={`p-2 rounded-lg ${
+                          isDarkMode
+                            ? "bg-blue-900/30 border border-blue-700/50"
+                            : "bg-blue-50 border border-blue-200"
+                        }`}
+                      >
+                        <Building
+                          className={`w-5 h-5 ${
+                            isDarkMode ? "text-blue-400" : "text-blue-600"
+                          }`}
+                        />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <h3
+                          className={`font-semibold truncate ${
+                            isDarkMode ? "text-white" : "text-gray-900"
+                          }`}
+                        >
+                          {committee.committee_name}
+                        </h3>
+
+                        <div className="flex items-center space-x-4 mt-1">
+                          <div className="flex items-center space-x-2">
+                            <Users
+                              size={16}
+                              className={
+                                isDarkMode ? "text-gray-400" : "text-gray-500"
+                              }
+                            />
+                            <span
+                              className={`text-sm ${
+                                isDarkMode ? "text-gray-300" : "text-gray-600"
+                              }`}
+                            >
+                              {committee.members?.length || 0} members
+                            </span>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <Building
+                              size={16}
+                              className={
+                                isDarkMode ? "text-gray-400" : "text-gray-500"
+                              }
+                            />
+                            <span
+                              className={`text-sm ${
+                                isDarkMode ? "text-gray-300" : "text-gray-600"
+                              }`}
+                            >
+                              {committee.committee_type || "N/A"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleViewDetails(committee)}
+                        className={`p-2 rounded-lg transition-all duration-300 ${
+                          isDarkMode
+                            ? "bg-blue-600/80 hover:bg-blue-500/80 text-white"
+                            : "bg-blue-600 hover:bg-blue-700 text-white"
+                        } shadow-lg hover:shadow-xl`}
+                      >
+                        <Eye size={16} />
+                      </button>
+
+                      <button
+                        onClick={() => handleAddMembers(committee)}
+                        className={`p-2 rounded-lg transition-all duration-300 ${
+                          isDarkMode
+                            ? "bg-green-600/80 hover:bg-green-500/80 text-white"
+                            : "bg-green-600 hover:bg-green-700 text-white"
+                        } shadow-lg hover:shadow-xl`}
+                      >
+                        <UserPlus size={16} />
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteCommittee(committee)}
+                        className={`p-2 rounded-lg transition-all duration-300 ${
+                          isDarkMode
+                            ? "bg-red-600/80 hover:bg-red-500/80 text-white"
+                            : "bg-red-600 hover:bg-red-700 text-white"
+                        } shadow-lg hover:shadow-xl`}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Committee Details Modal */}
@@ -230,331 +567,9 @@ const CommitteeList = ({ committees, onCommitteeUpdated }) => {
         onMembersAdded={handleMembersAdded}
       />
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && committeeToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div
-            className={`rounded-lg shadow-xl max-w-md w-full ${
-              isDarkMode ? "bg-gray-800" : "bg-white"
-            }`}
-          >
-            <div
-              className={`flex items-center justify-between p-6 border-b ${
-                isDarkMode ? "border-gray-600" : "border-gray-200"
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  <Trash2 className="w-6 h-6 text-red-600" />
-                </div>
-                <div>
-                  <h2
-                    className={`text-xl font-semibold ${
-                      isDarkMode ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    Delete Committee
-                  </h2>
-                  <p
-                    className={`text-sm ${
-                      isDarkMode ? "text-gray-400" : "text-gray-500"
-                    }`}
-                  >
-                    This action cannot be undone
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <div className="mb-4">
-                <p
-                  className={`mb-2 ${
-                    isDarkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  Are you sure you want to delete the committee:
-                </p>
-                <div
-                  className={`p-3 rounded-lg ${
-                    isDarkMode ? "bg-gray-700" : "bg-gray-50"
-                  }`}
-                >
-                  <p
-                    className={`font-medium ${
-                      isDarkMode ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    {committeeToDelete.committee_name}
-                  </p>
-                  <p
-                    className={`text-sm ${
-                      isDarkMode ? "text-gray-400" : "text-gray-500"
-                    }`}
-                  >
-                    Type: {committeeToDelete.committee_type}
-                  </p>
-                  <p
-                    className={`text-sm ${
-                      isDarkMode ? "text-gray-400" : "text-gray-500"
-                    }`}
-                  >
-                    ID: {committeeToDelete.committee_id}
-                  </p>
-                </div>
-              </div>
-
-              <div
-                className={`border rounded-lg p-4 mb-6 ${
-                  isDarkMode
-                    ? "bg-blue-900/30 border-blue-700"
-                    : "bg-blue-50 border-blue-200"
-                }`}
-              >
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg
-                      className={`h-5 w-5 ${
-                        isDarkMode ? "text-blue-400" : "text-blue-400"
-                      }`}
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3
-                      className={`text-sm font-medium ${
-                        isDarkMode ? "text-blue-300" : "text-blue-800"
-                      }`}
-                    >
-                      What will happen:
-                    </h3>
-                    <div
-                      className={`mt-2 text-sm ${
-                        isDarkMode ? "text-blue-200" : "text-blue-700"
-                      }`}
-                    >
-                      <ul className="list-disc list-inside space-y-1">
-                        <li>
-                          Committee members will be removed from this committee
-                          (users remain in system)
-                        </li>
-                        <li>
-                          Applications assigned to this committee will be
-                          unassigned
-                        </li>
-                        <li>All committee meetings will be deleted</li>
-                        <li>The committee will be permanently deleted</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={`flex justify-end space-x-3 p-6 border-t ${
-                isDarkMode ? "border-gray-600" : "border-gray-200"
-              }`}
-            >
-              <button
-                onClick={handleCancelDelete}
-                className={`px-4 py-2 border rounded-md transition-colors ${
-                  isDarkMode
-                    ? "border-gray-600 text-gray-300 hover:bg-gray-700"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center space-x-2"
-              >
-                <Trash2 size={16} />
-                <span>Delete Committee</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Header with refresh button */}
-      <div
-        className={`px-6 py-4 border-b flex justify-between items-center ${
-          isDarkMode
-            ? "border-gray-600 bg-gray-700"
-            : "border-gray-200 bg-gray-50"
-        }`}
-      >
-        <h3
-          className={`text-lg font-medium ${
-            isDarkMode ? "text-white" : "text-gray-900"
-          }`}
-        >
-          Committees
-        </h3>
-        <button
-          onClick={fetchCommitteesWithMembers}
-          disabled={loading}
-          className={`inline-flex items-center px-3 py-2 border shadow-sm text-sm leading-4 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 ${
-            isDarkMode
-              ? "border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600"
-              : "border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
-          }`}
-        >
-          <RefreshCw
-            className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
-          />
-          Refresh
-        </button>
-      </div>
-
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className={isDarkMode ? "bg-gray-700" : "bg-gray-50"}>
-          <tr>
-            <th
-              className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                isDarkMode ? "text-gray-300" : "text-gray-500"
-              }`}
-            >
-              ID
-            </th>
-            <th
-              className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                isDarkMode ? "text-gray-300" : "text-gray-500"
-              }`}
-            >
-              Name
-            </th>
-            <th
-              className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                isDarkMode ? "text-gray-300" : "text-gray-500"
-              }`}
-            >
-              Type
-            </th>
-            <th
-              className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                isDarkMode ? "text-gray-300" : "text-gray-500"
-              }`}
-            >
-              Members
-            </th>
-            <th
-              className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                isDarkMode ? "text-gray-300" : "text-gray-500"
-              }`}
-            >
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody
-          className={`divide-y ${
-            isDarkMode
-              ? "bg-gray-800 divide-gray-600"
-              : "bg-white divide-gray-200"
-          }`}
-        >
-          {committees.length === 0 ? (
-            <tr>
-              <td
-                colSpan="5"
-                className={`px-6 py-4 text-center ${
-                  isDarkMode ? "text-gray-400" : "text-gray-500"
-                }`}
-              >
-                No committees found. Create one to get started.
-              </td>
-            </tr>
-          ) : (
-            committees.map((committee) => (
-              <tr key={committee.committee_id}>
-                <td
-                  className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                    isDarkMode ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  {committee.committee_id}
-                </td>
-                <td
-                  className={`px-6 py-4 whitespace-nowrap text-sm ${
-                    isDarkMode ? "text-gray-300" : "text-gray-500"
-                  }`}
-                >
-                  {committee.committee_name}
-                </td>
-                <td
-                  className={`px-6 py-4 whitespace-nowrap text-sm ${
-                    isDarkMode ? "text-gray-300" : "text-gray-500"
-                  }`}
-                >
-                  {committee.committee_type}
-                </td>
-                <td
-                  className={`px-6 py-4 whitespace-nowrap text-sm ${
-                    isDarkMode ? "text-gray-300" : "text-gray-500"
-                  }`}
-                >
-                  {committee.members?.length || 0} members
-                </td>
-                <td
-                  className={`px-6 py-4 whitespace-nowrap text-sm ${
-                    isDarkMode ? "text-gray-300" : "text-gray-500"
-                  }`}
-                >
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => handleViewDetails(committee)}
-                      className={`flex items-center space-x-1 transition-colors ${
-                        isDarkMode
-                          ? "text-blue-400 hover:text-blue-300"
-                          : "text-blue-600 hover:text-blue-800"
-                      }`}
-                      title="View Committee Details"
-                    >
-                      <Eye size={16} />
-                      <span>View</span>
-                    </button>
-                    <button
-                      onClick={() => handleAddMembers(committee)}
-                      className={`flex items-center space-x-1 transition-colors ${
-                        isDarkMode
-                          ? "text-green-400 hover:text-green-300"
-                          : "text-green-600 hover:text-green-800"
-                      }`}
-                      title="Add Members"
-                    >
-                      <Users size={16} />
-                      <span>Add Members</span>
-                    </button>
-                    <button
-                      onClick={() => handleDeleteCommittee(committee)}
-                      className={`flex items-center space-x-1 transition-colors ${
-                        isDarkMode
-                          ? "text-red-400 hover:text-red-300"
-                          : "text-red-600 hover:text-red-800"
-                      }`}
-                      title="Delete Committee"
-                    >
-                      <Trash2 size={16} />
-                      <span>Delete</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
+      {/* Delete Confirmation Modal Portal */}
+      {showDeleteModal && createPortal(deleteModalContent, document.body)}
+    </>
   );
 };
 

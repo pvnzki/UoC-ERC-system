@@ -1,119 +1,88 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
+  User,
+  Mail,
+  Shield,
+  Calendar,
+  Search,
   Eye,
   CheckCircle,
   XCircle,
   Trash2,
   AlertTriangle,
-  Search,
-  Filter,
-  X,
-  ListFilter,
-  List,
 } from "lucide-react";
-import UserDetailsModal from "./UserDetailsModal";
 import { useTheme } from "../../../context/theme/ThemeContext";
+import UserDetailsModal from "./UserDetailsModal";
 
 const UserList = ({ users, onUpdateStatus, onDeleteUser, currentUser }) => {
   const { isDarkMode } = useTheme();
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [confirmAction, setConfirmAction] = useState({
-    type: null,
-    userId: null,
-  });
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-  const [groupByRole, setGroupByRole] = useState(true); // Toggle for grouping
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmationDetails, setConfirmationDetails] = useState({});
 
-  // Handle confirmation dialog showing
   const handleConfirmationShow = (actionType, userId) => {
-    setConfirmAction({ type: actionType, userId });
+    const user = users.find((u) => u.user_id === userId);
+    if (!user) return;
+
+    let details = {};
+    switch (actionType) {
+      case "block":
+        details = {
+          title: "Block User",
+          message: `Are you sure you want to block ${user.first_name} ${user.last_name}? They will not be able to access the system.`,
+          actionText: "Block User",
+          buttonClass: "bg-red-600 hover:bg-red-700",
+          icon: <XCircle className="w-6 h-6 text-red-600" />,
+          action: () => onUpdateStatus(userId, "block"),
+        };
+        break;
+      case "activate":
+        details = {
+          title: "Activate User",
+          message: `Are you sure you want to activate ${user.first_name} ${user.last_name}? They will be able to access the system again.`,
+          actionText: "Activate User",
+          buttonClass: "bg-green-600 hover:bg-green-700",
+          icon: <CheckCircle className="w-6 h-6 text-green-600" />,
+          action: () => onUpdateStatus(userId, "activate"),
+        };
+        break;
+      case "delete":
+        details = {
+          title: "Delete User",
+          message: `Are you sure you want to permanently delete ${user.first_name} ${user.last_name}? This action cannot be undone.`,
+          actionText: "Delete User",
+          buttonClass: "bg-red-600 hover:bg-red-700",
+          icon: <Trash2 className="w-6 h-6 text-red-600" />,
+          action: () => onDeleteUser(userId),
+        };
+        break;
+      default:
+        return;
+    }
+    setConfirmationDetails(details);
     setShowConfirmation(true);
   };
 
-  // Execute the confirmed action
   const handleConfirmedAction = () => {
-    if (confirmAction.type === "delete") {
-      onDeleteUser(confirmAction.userId);
-    } else if (confirmAction.type === "block") {
-      onUpdateStatus(confirmAction.userId, "block");
-    } else if (confirmAction.type === "unblock") {
-      onUpdateStatus(confirmAction.userId, "unblock");
-    }
+    confirmationDetails.action();
     setShowConfirmation(false);
   };
 
-  // Reset all filters
   const resetFilters = () => {
     setSearchQuery("");
     setFilterRole("");
     setFilterStatus("");
   };
 
-  // Get unique roles from users array
-  const uniqueRoles = useMemo(() => {
-    const roles = [...new Set(users.map((user) => user.role))];
-    return roles.sort();
-  }, [users]);
-
-  // Filter users based on search query and filters
-  const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      // Search query filter
-      const matchesSearch =
-        searchQuery === "" ||
-        user.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.user_id.toString().includes(searchQuery);
-
-      // Role filter
-      const matchesRole = filterRole === "" || user.role === filterRole;
-
-      // Status filter
-      const matchesStatus =
-        filterStatus === "" ||
-        (filterStatus === "active" && user.validity) ||
-        (filterStatus === "blocked" && !user.validity);
-
-      return matchesSearch && matchesRole && matchesStatus;
-    });
-  }, [users, searchQuery, filterRole, filterStatus]);
-
-  // Group users by role
-  const usersByRole = useMemo(() => {
-    const grouped = {};
-
-    if (filterRole) {
-      // If filtering by role, don't group
-      return { [filterRole]: filteredUsers };
-    }
-
-    filteredUsers.forEach((user) => {
-      if (!grouped[user.role]) {
-        grouped[user.role] = [];
-      }
-      grouped[user.role].push(user);
-    });
-
-    // Sort roles alphabetically
-    return Object.keys(grouped)
-      .sort()
-      .reduce((acc, role) => {
-        acc[role] = grouped[role];
-        return acc;
-      }, {});
-  }, [filteredUsers, filterRole]);
-
-  // Cancel the confirmation dialog
   const handleCancelAction = () => {
     setShowConfirmation(false);
   };
 
-  // Handle user details modal
   const handleViewUserDetails = (user) => {
     setSelectedUser(user);
     setShowUserDetails(true);
@@ -124,235 +93,444 @@ const UserList = ({ users, onUpdateStatus, onDeleteUser, currentUser }) => {
     setSelectedUser(null);
   };
 
-  // Get the confirmation message based on action type
   const getConfirmationMessage = () => {
-    const user = users.find((u) => u.user_id === confirmAction.userId);
-    const name = user ? `${user.first_name} ${user.last_name}` : "this user";
+    const activeFilters = [];
+    if (searchQuery) activeFilters.push(`Search: "${searchQuery}"`);
+    if (filterRole) activeFilters.push(`Role: ${filterRole}`);
+    if (filterStatus) activeFilters.push(`Status: ${filterStatus}`);
 
-    switch (confirmAction.type) {
-      case "delete":
-        return {
-          title: "Confirm User Deletion",
-          message: `Are you sure you want to permanently delete ${name}? This action cannot be undone.`,
-          actionText: "Delete User",
-          icon: <Trash2 className="text-red-500" size={24} />,
-          buttonClass: "bg-red-500 hover:bg-red-600",
-        };
-      case "block":
-        return {
-          title: "Confirm User Block",
-          message: `Are you sure you want to block ${name}? They will not be able to log in until unblocked.`,
-          actionText: "Block User",
-          icon: <XCircle className="text-orange-500" size={24} />,
-          buttonClass: "bg-orange-500 hover:bg-orange-600",
-        };
-      case "unblock":
-        return {
-          title: "Confirm User Activation",
-          message: `Are you sure you want to activate ${name}? They will regain access to the system.`,
-          actionText: "Activate User",
-          icon: <CheckCircle className="text-green-500" size={24} />,
-          buttonClass: "bg-green-500 hover:bg-green-600",
-        };
-      default:
-        return {
-          title: "Confirm Action",
-          message: "Are you sure you want to perform this action?",
-          actionText: "Confirm",
-          icon: <AlertTriangle className="text-yellow-500" size={24} />,
-          buttonClass: "bg-blue-500 hover:bg-blue-600",
-        };
-    }
-  };
+    if (activeFilters.length === 0) return null;
 
-  // Tooltip component for action buttons
-  const Tooltip = ({ children, label }) => {
     return (
-      <div className="group relative inline-block">
-        {children}
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-10">
-          {label}
-          <div className="absolute left-1/2 -translate-x-1/2 top-full -mt-1 border-4 border-transparent border-t-gray-800"></div>
+      <div
+        className={`mb-4 p-3 rounded-lg ${
+          isDarkMode
+            ? "bg-blue-900/20 border border-blue-700/30"
+            : "bg-blue-50/80 border border-blue-200/50"
+        }`}
+      >
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <Search
+              className={`h-4 w-4 ${
+                isDarkMode ? "text-blue-400" : "text-blue-500"
+              }`}
+            />
+          </div>
+          <div className="ml-2">
+            <p
+              className={`text-sm font-medium ${
+                isDarkMode ? "text-blue-300" : "text-blue-800"
+              }`}
+            >
+              Active Filters: {activeFilters.join(", ")}
+            </p>
+          </div>
         </div>
       </div>
     );
   };
 
-  const confirmationDetails = getConfirmationMessage();
   const hasActiveFilters = searchQuery || filterRole || filterStatus;
 
-  // Render a single user table row
-  const renderUserRow = (user) => {
-    // Debug: Log user data to understand the structure (only for first user)
-    if (user.user_id === 1) {
-      console.log("Current user from context:", currentUser);
-      console.log("User from list:", user);
-      console.log("CurrentUser type:", typeof currentUser);
-      console.log("CurrentUser is null:", currentUser === null);
-      console.log("CurrentUser is undefined:", currentUser === undefined);
-      console.log(
-        "User ID comparison:",
-        user.user_id,
-        "===",
-        currentUser?.user_id,
-        "=",
-        user.user_id === currentUser?.user_id
-      );
-      console.log(
-        "Email comparison:",
-        user.email,
-        "===",
-        currentUser?.email,
-        "=",
-        user.email === currentUser?.email
-      );
-    }
+  // Get unique roles for filter dropdown
+  const uniqueRoles = [...new Set(users.map((user) => user.role))].sort();
 
-    // Test: Check if this is the admin user (user_id: 9, email: 'admin@uoc.lk')
-    const isAdminUser = user.user_id === 9 && user.email === "admin@uoc.lk";
-    if (isAdminUser) {
-      console.log("Found admin user:", user);
-      console.log("Current user context:", currentUser);
-    }
+  // Filter users based on search query and filters
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      searchQuery === "" ||
+      user.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.user_id.toString().includes(searchQuery);
 
-    // Proper comparison - only match if we have a currentUser and the IDs/emails match exactly
-    const isCurrentUser =
-      currentUser &&
-      ((user.user_id &&
-        currentUser.user_id &&
-        user.user_id === currentUser.user_id) ||
-        (user.email && currentUser.email && user.email === currentUser.email));
+    const matchesRole = filterRole === "" || user.role === filterRole;
 
-    const name = `${user.first_name} ${user.last_name}`;
+    const matchesStatus =
+      filterStatus === "" ||
+      (filterStatus === "active" && user.validity) ||
+      (filterStatus === "blocked" && !user.validity);
 
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
+  const Tooltip = ({ children, label }) => {
     return (
-      <tr
-        key={user.user_id}
-        className={isDarkMode ? "hover:bg-gray-700" : "hover:bg-gray-50"}
-      >
-        <td
-          className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-            isDarkMode ? "text-white" : "text-gray-900"
+      <div className="relative group">
+        {children}
+        <div
+          className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10 ${
+            isDarkMode
+              ? "bg-gray-800 text-white border border-gray-700"
+              : "bg-gray-900 text-white border border-gray-600"
           }`}
         >
-          {user.user_id}
-        </td>
-        <td
-          className={`px-6 py-4 whitespace-nowrap text-sm ${
-            isDarkMode ? "text-gray-300" : "text-gray-500"
-          }`}
-        >
-          {name}
-          {isCurrentUser && (
-            <span
-              className={`ml-1 text-xs font-medium ${
-                isDarkMode ? "text-blue-400" : "text-blue-600"
-              }`}
-            >
-              (You)
-            </span>
-          )}
-        </td>
-        <td
-          className={`px-6 py-4 whitespace-nowrap text-sm ${
-            isDarkMode ? "text-gray-300" : "text-gray-500"
-          }`}
-        >
-          {user.email}
-        </td>
-        {!groupByRole && (
-          <td
-            className={`px-6 py-4 whitespace-nowrap text-sm ${
-              isDarkMode ? "text-gray-300" : "text-gray-500"
+          {label}
+          <div
+            className={`absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${
+              isDarkMode ? "border-t-gray-800" : "border-t-gray-900"
             }`}
-          >
-            {user.role.replace(/_/g, " ")}
-          </td>
-        )}
-        <td className="px-6 py-4 whitespace-nowrap">
-          {user.validity ? (
-            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-              Active
-            </span>
-          ) : (
-            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-              Blocked
-            </span>
-          )}
-        </td>
-        <td
-          className={`px-6 py-4 whitespace-nowrap text-sm ${
-            isDarkMode ? "text-gray-300" : "text-gray-500"
-          }`}
-        >
-          <div className="flex items-center space-x-3">
-            <Tooltip label="View User Details">
-              <button
-                onClick={() => handleViewUserDetails(user)}
-                className={`transition-colors cursor-pointer ${
-                  isDarkMode
-                    ? "text-blue-400 hover:text-blue-300"
-                    : "text-blue-600 hover:text-blue-800"
-                }`}
-              >
-                <Eye size={18} />
-              </button>
-            </Tooltip>
-
-            {user.validity ? (
-              <Tooltip label="Block User Access">
-                <button
-                  onClick={() => handleConfirmationShow("block", user.user_id)}
-                  className={`transition-colors cursor-pointer ${
-                    isDarkMode
-                      ? "text-orange-400 hover:text-orange-300"
-                      : "text-orange-600 hover:text-orange-800"
-                  }`}
-                >
-                  <XCircle size={18} />
-                </button>
-              </Tooltip>
-            ) : (
-              <Tooltip label="Activate User Access">
-                <button
-                  onClick={() =>
-                    handleConfirmationShow("unblock", user.user_id)
-                  }
-                  className={`transition-colors cursor-pointer ${
-                    isDarkMode
-                      ? "text-green-400 hover:text-green-300"
-                      : "text-green-600 hover:text-green-800"
-                  }`}
-                >
-                  <CheckCircle size={18} />
-                </button>
-              </Tooltip>
-            )}
-
-            <Tooltip label="Permanently Delete User">
-              <button
-                onClick={() => handleConfirmationShow("delete", user.user_id)}
-                className={`transition-colors cursor-pointer ${
-                  isDarkMode
-                    ? "text-red-400 hover:text-red-300"
-                    : "text-red-600 hover:text-red-800"
-                }`}
-              >
-                <Trash2 size={18} />
-              </button>
-            </Tooltip>
-          </div>
-        </td>
-      </tr>
+          ></div>
+        </div>
+      </div>
     );
   };
 
+  const renderUserCard = (user) => {
+    const isCurrentUser = currentUser && currentUser.user_id === user.user_id;
+
+    return (
+      <div
+        key={user.user_id}
+        className={`p-4 rounded-lg transition-all duration-300 hover:scale-[1.01] ${
+          isDarkMode
+            ? "bg-gray-700/50 border border-gray-600/50 hover:bg-gray-600/50"
+            : "bg-gray-50/50 border border-gray-200/50 hover:bg-gray-100/50"
+        } shadow-md hover:shadow-lg`}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4 flex-1 min-w-0">
+            <div
+              className={`p-2 rounded-lg ${
+                isDarkMode
+                  ? "bg-purple-900/30 border border-purple-700/50"
+                  : "bg-purple-50 border border-purple-200"
+              }`}
+            >
+              <User
+                className={`w-5 h-5 ${
+                  isDarkMode ? "text-purple-400" : "text-purple-600"
+                }`}
+              />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-2">
+                <h3
+                  className={`font-semibold truncate ${
+                    isDarkMode ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  {user.first_name} {user.last_name}
+                </h3>
+                {isCurrentUser && (
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      isDarkMode
+                        ? "bg-blue-900/30 text-blue-200 border border-blue-700/50"
+                        : "bg-blue-50 text-blue-700 border border-blue-200"
+                    }`}
+                  >
+                    You
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center space-x-4 mt-1">
+                <div className="flex items-center space-x-1">
+                  <Mail
+                    className={`w-3 h-3 ${
+                      isDarkMode ? "text-gray-400" : "text-gray-500"
+                    }`}
+                  />
+                  <span
+                    className={`text-sm truncate ${
+                      isDarkMode ? "text-gray-300" : "text-gray-600"
+                    }`}
+                  >
+                    {user.email}
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-1">
+                  <Shield
+                    className={`w-3 h-3 ${
+                      isDarkMode ? "text-gray-400" : "text-gray-500"
+                    }`}
+                  />
+                  <span
+                    className={`text-sm ${
+                      isDarkMode ? "text-gray-300" : "text-gray-600"
+                    }`}
+                  >
+                    {user.role.replace(/_/g, " ")}
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-1">
+                  <Calendar
+                    className={`w-3 h-3 ${
+                      isDarkMode ? "text-gray-400" : "text-gray-500"
+                    }`}
+                  />
+                  <span
+                    className={`text-sm ${
+                      isDarkMode ? "text-gray-300" : "text-gray-600"
+                    }`}
+                  >
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 ml-4">
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                user.validity
+                  ? isDarkMode
+                    ? "bg-green-900/30 text-green-200 border border-green-700/50"
+                    : "bg-green-50 text-green-700 border border-green-200"
+                  : isDarkMode
+                  ? "bg-red-900/30 text-red-200 border border-red-700/50"
+                  : "bg-red-50 text-red-700 border border-red-200"
+              }`}
+            >
+              {user.validity ? "Active" : "Blocked"}
+            </span>
+
+            <Tooltip label="View Details">
+              <button
+                onClick={() => handleViewUserDetails(user)}
+                className={`p-2 rounded-lg transition-all duration-300 ${
+                  isDarkMode
+                    ? "bg-blue-600/80 hover:bg-blue-500/80 text-white"
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                } shadow-md hover:shadow-lg`}
+              >
+                <Eye size={14} />
+              </button>
+            </Tooltip>
+
+            {!isCurrentUser && (
+              <>
+                {user.validity ? (
+                  <Tooltip label="Block User">
+                    <button
+                      onClick={() =>
+                        handleConfirmationShow("block", user.user_id)
+                      }
+                      className={`p-2 rounded-lg transition-all duration-300 ${
+                        isDarkMode
+                          ? "bg-yellow-600/80 hover:bg-yellow-500/80 text-white"
+                          : "bg-yellow-600 hover:bg-yellow-700 text-white"
+                      } shadow-md hover:shadow-lg`}
+                    >
+                      <XCircle size={14} />
+                    </button>
+                  </Tooltip>
+                ) : (
+                  <Tooltip label="Activate User">
+                    <button
+                      onClick={() =>
+                        handleConfirmationShow("activate", user.user_id)
+                      }
+                      className={`p-2 rounded-lg transition-all duration-300 ${
+                        isDarkMode
+                          ? "bg-green-600/80 hover:bg-green-500/80 text-white"
+                          : "bg-green-600 hover:bg-green-700 text-white"
+                      } shadow-md hover:shadow-lg`}
+                    >
+                      <CheckCircle size={14} />
+                    </button>
+                  </Tooltip>
+                )}
+
+                <Tooltip label="Permanently Delete User">
+                  <button
+                    onClick={() =>
+                      handleConfirmationShow("delete", user.user_id)
+                    }
+                    className={`p-2 rounded-lg transition-all duration-300 ${
+                      isDarkMode
+                        ? "bg-red-600/80 hover:bg-red-500/80 text-white"
+                        : "bg-red-600 hover:bg-red-700 text-white"
+                    } shadow-md hover:shadow-lg`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </Tooltip>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const confirmationModalContent = showConfirmation ? (
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50">
+      <div
+        className="max-w-md w-full mx-4 rounded-xl"
+        style={{
+          background: isDarkMode
+            ? "linear-gradient(135deg, rgba(31, 41, 55, 0.7), rgba(55, 65, 81, 0.7))"
+            : "linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(249, 250, 251, 0.7))",
+          backdropFilter: "blur(25px)",
+          WebkitBackdropFilter: "blur(25px)",
+          border: isDarkMode
+            ? "1px solid rgba(75, 85, 99, 0.2)"
+            : "1px solid rgba(229, 231, 235, 0.3)",
+          boxShadow: isDarkMode
+            ? "0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05)"
+            : "0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+        }}
+      >
+        <div className="flex items-center gap-3 mb-4">
+          {confirmationDetails.icon}
+          <h3 className="text-lg font-semibold">{confirmationDetails.title}</h3>
+        </div>
+
+        <p
+          className={`mb-4 text-sm ${
+            isDarkMode ? "text-gray-300" : "text-gray-600"
+          }`}
+        >
+          {confirmationDetails.message}
+        </p>
+
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={handleCancelAction}
+            className={`px-3 py-2 rounded-lg transition-all duration-300 text-sm ${
+              isDarkMode
+                ? "bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 hover:text-white"
+                : "bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleConfirmedAction}
+            className={`px-3 py-2 rounded-lg transition-all duration-300 text-white text-sm ${confirmationDetails.buttonClass}`}
+          >
+            {confirmationDetails.actionText}
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   return (
-    <div
-      className={`shadow-md rounded-lg overflow-hidden ${
-        isDarkMode ? "bg-gray-800" : "bg-white"
-      }`}
-    >
+    <>
+      <div
+        className={`rounded-lg backdrop-blur-xl border shadow-lg overflow-hidden ${
+          isDarkMode
+            ? "bg-gray-800/50 border-gray-700/50"
+            : "bg-white/70 border-gray-200/50"
+        }`}
+      >
+        {/* Compact Filters Section */}
+        <div
+          className={`p-4 border-b ${
+            isDarkMode ? "border-gray-600/50" : "border-gray-200/50"
+          }`}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+              <div className="relative">
+                <Search
+                  size={16}
+                  className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
+                    isDarkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                />
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={`pl-9 pr-3 py-2 rounded-lg border transition-all duration-300 ${
+                    isDarkMode
+                      ? "bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+                      : "bg-gray-50/50 border-gray-300/50 text-gray-900 placeholder-gray-500 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+                  }`}
+                />
+              </div>
+
+              <select
+                value={filterRole}
+                onChange={(e) => setFilterRole(e.target.value)}
+                className={`px-3 py-2 rounded-lg border transition-all duration-300 ${
+                  isDarkMode
+                    ? "bg-gray-700/50 border-gray-600/50 text-white focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+                    : "bg-gray-50/50 border-gray-300/50 text-gray-900 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+                }`}
+              >
+                <option value="">All Roles</option>
+                {uniqueRoles.map((role) => (
+                  <option key={role} value={role}>
+                    {role.replace(/_/g, " ")}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className={`px-3 py-2 rounded-lg border transition-all duration-300 ${
+                  isDarkMode
+                    ? "bg-gray-700/50 border-gray-600/50 text-white focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+                    : "bg-gray-50/50 border-gray-300/50 text-gray-900 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+                }`}
+              >
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="blocked">Blocked</option>
+              </select>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              {hasActiveFilters && (
+                <button
+                  onClick={resetFilters}
+                  className={`px-3 py-2 rounded-lg transition-all duration-300 text-sm ${
+                    isDarkMode
+                      ? "bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 hover:text-white"
+                      : "bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  Clear Filters
+                </button>
+              )}
+
+              <span
+                className={`text-sm ${
+                  isDarkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                {filteredUsers.length} users
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Users List */}
+        <div className="p-4">
+          {filteredUsers.length === 0 ? (
+            <div className="text-center py-12">
+              <User
+                size={32}
+                className={`mx-auto mb-3 ${
+                  isDarkMode ? "text-gray-600" : "text-gray-400"
+                }`}
+              />
+              <p
+                className={`text-sm ${
+                  isDarkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                No users found
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">{filteredUsers.map(renderUserCard)}</div>
+          )}
+        </div>
+      </div>
+
       {/* User Details Modal */}
       <UserDetailsModal
         user={selectedUser}
@@ -360,345 +538,10 @@ const UserList = ({ users, onUpdateStatus, onDeleteUser, currentUser }) => {
         onClose={handleCloseUserDetails}
       />
 
-      {/* Confirmation Dialog */}
-      {showConfirmation && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div
-            className={`rounded-lg p-6 max-w-md w-full mx-4 ${
-              isDarkMode ? "bg-gray-800" : "bg-white"
-            }`}
-          >
-            <div className="flex items-center gap-3 mb-4">
-              {confirmationDetails.icon}
-              <h3
-                className={`text-xl font-semibold ${
-                  isDarkMode ? "text-white" : "text-gray-900"
-                }`}
-              >
-                {confirmationDetails.title}
-              </h3>
-            </div>
-
-            <p
-              className={`mb-6 ${
-                isDarkMode ? "text-gray-300" : "text-gray-600"
-              }`}
-            >
-              {confirmationDetails.message}
-            </p>
-
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={handleCancelAction}
-                className={`px-4 py-2 border rounded-md ${
-                  isDarkMode
-                    ? "border-gray-600 text-gray-200 hover:bg-gray-700"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmedAction}
-                className={`px-4 py-2 text-white rounded-md ${confirmationDetails.buttonClass}`}
-              >
-                {confirmationDetails.actionText}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Search and Filter Bar */}
-      <div
-        className={`p-4 border-b ${
-          isDarkMode
-            ? "border-gray-600 bg-gray-800"
-            : "border-gray-200 bg-gray-50"
-        }`}
-      >
-        <div className="flex flex-col md:flex-row gap-3">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search
-                size={16}
-                className={isDarkMode ? "text-gray-400" : "text-gray-400"}
-              />
-            </div>
-            <input
-              type="text"
-              className={`block w-full pl-10 pr-3 py-2 border rounded-md leading-5 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
-                isDarkMode
-                  ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                  : "bg-white border-gray-300 text-gray-900 placeholder-gray-500"
-              }`}
-              placeholder="Search by name, email, or ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {searchQuery && (
-              <button
-                className={`absolute inset-y-0 right-0 pr-3 flex items-center ${
-                  isDarkMode
-                    ? "text-gray-400 hover:text-gray-300"
-                    : "text-gray-400 hover:text-gray-600"
-                }`}
-                onClick={() => setSearchQuery("")}
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
-
-          {/* Role Filter */}
-          <div className="w-full md:w-48">
-            <select
-              className={`block w-full px-3 py-2 border rounded-md leading-5 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
-                isDarkMode
-                  ? "bg-gray-700 border-gray-600 text-white"
-                  : "bg-white border-gray-300 text-gray-900"
-              }`}
-              value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
-            >
-              <option value="">All Roles</option>
-              {uniqueRoles.map((role) => (
-                <option key={role} value={role}>
-                  {role.replace(/_/g, " ")}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Status Filter */}
-          <div className="w-full md:w-48">
-            <select
-              className={`block w-full px-3 py-2 border rounded-md leading-5 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
-                isDarkMode
-                  ? "bg-gray-700 border-gray-600 text-white"
-                  : "bg-white border-gray-300 text-gray-900"
-              }`}
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <option value="">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="blocked">Blocked</option>
-            </select>
-          </div>
-
-          {/* Group By Toggle */}
-          <div className="w-full md:w-auto">
-            <button
-              className={`inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                isDarkMode
-                  ? "border-gray-600 bg-gray-700 text-gray-200 hover:bg-gray-600"
-                  : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-              }`}
-              onClick={() => setGroupByRole(!groupByRole)}
-            >
-              {groupByRole ? (
-                <>
-                  <List size={16} className="mr-2" />
-                  Flat View
-                </>
-              ) : (
-                <>
-                  <ListFilter size={16} className="mr-2" />
-                  Group by Role
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Reset Filters */}
-          {hasActiveFilters && (
-            <button
-              className={`inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                isDarkMode
-                  ? "border-gray-600 bg-gray-700 text-gray-200 hover:bg-gray-600"
-                  : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-              }`}
-              onClick={resetFilters}
-            >
-              <X size={16} className="mr-2" />
-              Clear Filters
-            </button>
-          )}
-        </div>
-
-        {/* Filter Stats */}
-        <div
-          className={`mt-2 text-sm ${
-            isDarkMode ? "text-gray-400" : "text-gray-500"
-          }`}
-        >
-          {filteredUsers.length === 0 ? (
-            <p>No users match your search criteria</p>
-          ) : (
-            <p>
-              Showing {filteredUsers.length}{" "}
-              {filteredUsers.length === 1 ? "user" : "users"}
-              {hasActiveFilters ? " with applied filters" : ""}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Empty State */}
-      {filteredUsers.length === 0 && (
-        <div
-          className={`p-6 text-center ${
-            isDarkMode ? "text-gray-400" : "text-gray-500"
-          }`}
-        >
-          No users found.{" "}
-          {!hasActiveFilters
-            ? "Create one to get started."
-            : "Try changing your filters."}
-        </div>
-      )}
-
-      {/* Grouped View */}
-      {filteredUsers.length > 0 && groupByRole && (
-        <div>
-          {Object.entries(usersByRole).map(([role, users]) => (
-            <div key={role} className="mb-6">
-              {/* Role Section Header */}
-              <div
-                className={`px-6 py-3 border-y ${
-                  isDarkMode
-                    ? "bg-gray-800 border-gray-600"
-                    : "bg-gray-100 border-gray-200"
-                }`}
-              >
-                <h3
-                  className={`font-semibold ${
-                    isDarkMode ? "text-gray-200" : "text-gray-700"
-                  }`}
-                >
-                  {role.replace(/_/g, " ")} ({users.length})
-                </h3>
-              </div>
-
-              {/* Role Users Table */}
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className={isDarkMode ? "bg-gray-700" : "bg-gray-50"}>
-                  <tr>
-                    <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                        isDarkMode ? "text-gray-300" : "text-gray-500"
-                      }`}
-                    >
-                      ID
-                    </th>
-                    <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                        isDarkMode ? "text-gray-300" : "text-gray-500"
-                      }`}
-                    >
-                      Name
-                    </th>
-                    <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                        isDarkMode ? "text-gray-300" : "text-gray-500"
-                      }`}
-                    >
-                      Email
-                    </th>
-                    <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                        isDarkMode ? "text-gray-300" : "text-gray-500"
-                      }`}
-                    >
-                      Status
-                    </th>
-                    <th
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                        isDarkMode ? "text-gray-300" : "text-gray-500"
-                      }`}
-                    >
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody
-                  className={`divide-y ${
-                    isDarkMode
-                      ? "bg-gray-800 divide-gray-700"
-                      : "bg-white divide-gray-200"
-                  }`}
-                >
-                  {users.map((user) => renderUserRow(user))}
-                </tbody>
-              </table>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Non-Grouped View */}
-      {filteredUsers.length > 0 && !groupByRole && (
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className={isDarkMode ? "bg-gray-700" : "bg-gray-50"}>
-            <tr>
-              <th
-                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                  isDarkMode ? "text-gray-300" : "text-gray-500"
-                }`}
-              >
-                ID
-              </th>
-              <th
-                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                  isDarkMode ? "text-gray-300" : "text-gray-500"
-                }`}
-              >
-                Name
-              </th>
-              <th
-                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                  isDarkMode ? "text-gray-300" : "text-gray-500"
-                }`}
-              >
-                Email
-              </th>
-              <th
-                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                  isDarkMode ? "text-gray-300" : "text-gray-500"
-                }`}
-              >
-                Role
-              </th>
-              <th
-                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                  isDarkMode ? "text-gray-300" : "text-gray-500"
-                }`}
-              >
-                Status
-              </th>
-              <th
-                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                  isDarkMode ? "text-gray-300" : "text-gray-500"
-                }`}
-              >
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            className={`divide-y ${
-              isDarkMode
-                ? "bg-gray-800 divide-gray-700"
-                : "bg-white divide-gray-200"
-            }`}
-          >
-            {filteredUsers.map((user) => renderUserRow(user))}
-          </tbody>
-        </table>
-      )}
-    </div>
+      {/* Confirmation Modal Portal */}
+      {showConfirmation &&
+        createPortal(confirmationModalContent, document.body)}
+    </>
   );
 };
 
