@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { officeStaffServices } from "../../../services/office-staff-services";
+import BeatLoader from "../../components/common/BeatLoader";
 import {
   Loader2,
   BarChart2,
@@ -172,6 +173,10 @@ export default function Dashboard() {
     (a) => a.status === "PRELIMINARY_REVIEW"
   );
 
+  if (loading) {
+    return <BeatLoader />;
+  }
+
   return (
     <div
       className={`w-full min-h-screen px-2 py-1 md:px-8 ${
@@ -202,7 +207,7 @@ export default function Dashboard() {
         </p>
         {loading ? (
           <div className="flex justify-center items-center h-40">
-            <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+            <BeatLoader />
           </div>
         ) : error ? (
           <div className="text-left text-red-500 font-semibold py-6">

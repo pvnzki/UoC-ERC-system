@@ -1,5 +1,6 @@
 import React from "react";
 import { Forward, RotateCcw, Loader2 } from "lucide-react";
+import BeatLoader from "../../common/BeatLoader";
 
 const ReturnForwardModal = ({
   open,
@@ -54,11 +55,7 @@ const ReturnForwardModal = ({
               className="mt-3 px-6 py-3 rounded-lg bg-green-500/80 text-white text-base font-semibold shadow hover:bg-green-600/90 hover:shadow-md transition-all border border-green-400/60 w-full focus:outline-none focus:ring-2 focus:ring-green-400/60 backdrop-blur"
               title="Forward this application to the committee"
             >
-              {actionLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin inline" />
-              ) : (
-                "Forward to Committee"
-              )}
+              {actionLoading ? <BeatLoader /> : "Forward to Committee"}
             </button>
           </div>
           {/* Return Option */}
@@ -101,11 +98,7 @@ const ReturnForwardModal = ({
               className="mt-3 px-6 py-3 rounded-lg bg-red-500/80 text-white text-base font-semibold shadow hover:bg-red-600/90 hover:shadow-md transition-all border border-red-400/60 w-full focus:outline-none focus:ring-2 focus:ring-red-400/60 backdrop-blur"
               title="Return this application to the applicant"
             >
-              {actionLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin inline" />
-              ) : (
-                "Return to Applicant"
-              )}
+              {actionLoading ? <BeatLoader /> : "Return to Applicant"}
             </button>
           </div>
         </div>

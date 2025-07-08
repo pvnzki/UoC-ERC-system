@@ -4,6 +4,7 @@ import { X, Users, User, Plus, Search } from "lucide-react";
 import { adminServices } from "../../../../services/admin-services";
 import { toast } from "react-toastify";
 import { useTheme } from "../../../context/theme/ThemeContext";
+import BeatLoader from "../../common/BeatLoader";
 
 const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
   const { isDarkMode } = useTheme();
@@ -271,11 +272,7 @@ const AddMembersModal = ({ committee, isOpen, onClose, onMembersAdded }) => {
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {loading ? (
                 <div className="flex justify-center items-center h-32">
-                  <div
-                    className={`animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 ${
-                      isDarkMode ? "border-blue-400" : "border-blue-500"
-                    }`}
-                  ></div>
+                  <BeatLoader />
                 </div>
               ) : filteredUsers.length === 0 ? (
                 <div

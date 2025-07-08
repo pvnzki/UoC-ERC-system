@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Loader2, AlertCircle } from "lucide-react";
 import pdf from "../../assets/TechnicalAdmin/Group 4.png";
 import { adminServices } from "../../../services/admin-services";
+import BeatLoader from "../../components/common/BeatLoader";
 
 const Card = ({ children, className = "" }) => (
   <div className={`bg-white rounded-lg shadow-md p-6 ${className}`}>
@@ -70,7 +71,7 @@ const EvaluatedApplicationDetails = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <BeatLoader />
           <p className="text-lg text-gray-600">
             Loading application details...
           </p>

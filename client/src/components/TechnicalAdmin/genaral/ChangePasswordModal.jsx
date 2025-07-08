@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { X, Eye, EyeOff, CheckCircle, AlertCircle, Lock } from "lucide-react";
 import { changePassword } from "../../../../services/auth-services.js";
 import { useTheme } from "../../../context/theme/ThemeContext";
+import BeatLoader from "../../common/BeatLoader";
 
 const ChangePasswordModal = ({ isOpen, onClose }) => {
   const { isDarkMode } = useTheme();
@@ -375,14 +376,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
                     : "bg-blue-600 text-white hover:bg-blue-700"
                 }`}
               >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Changing...
-                  </>
-                ) : (
-                  "Change Password"
-                )}
+                {isLoading ? <BeatLoader /> : "Change Password"}
               </button>
             </div>
           </form>

@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { toast } from "react-toastify";
 import { Loader, CheckCircle, Mail, AlertTriangle, User } from "lucide-react";
 import { useTheme } from "../../../context/theme/ThemeContext";
+import BeatLoader from "../../common/BeatLoader";
 
 const CreateUserForm = ({ onSubmit, committees }) => {
   const { isDarkMode } = useTheme();
@@ -157,7 +158,7 @@ const CreateUserForm = ({ onSubmit, committees }) => {
           >
             {loading ? (
               <>
-                <Loader size={16} className="animate-spin" />
+                <BeatLoader />
                 Creating...
               </>
             ) : (

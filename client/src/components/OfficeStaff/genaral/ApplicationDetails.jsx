@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useTheme } from "../../../context/theme/ThemeContext";
 import { officeStaffServices } from "../../../../services/office-staff-services";
 import {
-  Loader2,
   AlertCircle,
   ArrowLeft,
   CheckCircle,
@@ -19,6 +18,7 @@ import {
 } from "lucide-react";
 import defaultProfile from "../../../assets/default-profile.png";
 import ReturnForwardModal from "./ReturnForwardModal";
+import BeatLoader from "../../common/BeatLoader";
 
 const ApplicationDetails = () => {
   const { id } = useParams();
@@ -259,7 +259,7 @@ const ApplicationDetails = () => {
       >
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+            <BeatLoader className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
             <p
               className={`text-lg ${
                 isDarkMode ? "text-gray-300" : "text-gray-600"
@@ -1049,7 +1049,7 @@ const ApplicationDetails = () => {
                     }`}
                   >
                     {actionLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin inline" />
+                      <BeatLoader className="w-4 h-4 animate-spin inline" />
                     ) : (
                       "Return"
                     )}

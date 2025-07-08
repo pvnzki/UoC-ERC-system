@@ -12,6 +12,7 @@ import {
 import { toast } from "react-toastify";
 import { adminServices } from "../../../../services/admin-services";
 import { useTheme } from "../../../context/theme/ThemeContext";
+import BeatLoader from "../../common/BeatLoader";
 
 const MeetingDetailsModal = ({ isOpen, onClose, meeting, onUpdate }) => {
   const { isDarkMode } = useTheme();
@@ -274,13 +275,7 @@ const MeetingDetailsModal = ({ isOpen, onClose, meeting, onUpdate }) => {
             </h3>
 
             {loading ? (
-              <div className="flex justify-center items-center h-24">
-                <div
-                  className={`animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 ${
-                    isDarkMode ? "border-blue-400" : "border-blue-500"
-                  }`}
-                ></div>
-              </div>
+              <BeatLoader />
             ) : applications.length === 0 ? (
               <p
                 className={`text-center py-6 text-sm ${
