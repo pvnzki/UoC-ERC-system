@@ -403,8 +403,7 @@ const ApplicationDetails = () => {
           setActionLoading(true);
           setActionError("");
           try {
-            // Use the backend integration for forwarding
-            await officeStaffServices.forwardApplication(id);
+            await officeStaffServices.markOutcome(id, "forward");
             setIsChecked(true);
             setIsForwarded(true);
             setShowActionModal(false);
@@ -422,8 +421,8 @@ const ApplicationDetails = () => {
           setActionLoading(true);
           setActionError("");
           try {
-            // Use the backend integration for returning
-            await officeStaffServices.returnApplication(id, returnReason);
+            await officeStaffServices.markOutcome(id, "return");
+            await officeStaffServices.sendReturnEmail(id, returnReason);
             setIsChecked(true);
             setIsReturned(true);
             setEmailSent(true);

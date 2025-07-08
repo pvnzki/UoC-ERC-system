@@ -97,6 +97,81 @@ const officeStaffController = {
       }
       application.last_updated = new Date();
       await application.save();
+
+      // Send email to applicant when forwarded
+      if (outcome === "forward") {
+        const appWithApplicant = await Application.findOne({
+          where: { application_id: id },
+          include: [
+            {
+              model: require("../models").Applicant,
+              as: "applicant",
+              include: [
+                {
+                  model: require("../models").User,
+                  as: "user",
+                  attributes: ["first_name", "last_name", "email"],
+                },
+              ],
+            },
+          ],
+        });
+        if (
+          appWithApplicant &&
+          appWithApplicant.applicant &&
+          appWithApplicant.applicant.user
+        ) {
+          const { first_name, last_name, email } =
+            appWithApplicant.applicant.user;
+          const staffName = req.user
+            ? `${req.user.first_name} ${req.user.last_name}`
+            : "ERC Office Staff";
+          const subject = "Your ERC Application Has Been Forwarded for Review";
+          const html = `<p>Dear ${first_name} ${last_name},</p>
+            <p>Your application (ID: ${id}) has been forwarded to the ERC Technical Committee for further review.</p>
+            <p>If you have any questions, please contact us.</p>
+            <p>Best regards,<br/>${staffName}</p>`;
+          await require("../utils/email-service").sendMail({
+            to: email,
+            subject,
+            html,
+            from: {
+              name: staffName,
+              address: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+            },
+          });
+
+          // Send application details to all ERC Technical Admins (role: 'ADMIN')
+          const { User } = require("../models");
+          const technicalAdmins = await User.findAll({
+            where: { role: "ADMIN", validity: true },
+            attributes: ["first_name", "last_name", "email"],
+          });
+
+          const appDetails = `
+            <h3>New Application Forwarded</h3>
+            <p><strong>Application ID:</strong> ${id}</p>
+            <p><strong>Applicant:</strong> ${first_name} ${last_name} (${email})</p>
+            <p><strong>Status:</strong> PRELIMINARY_REVIEW</p>
+            <!-- Add more details as needed -->
+          `;
+
+          for (const admin of technicalAdmins) {
+            if (admin.email) {
+              await require("../utils/email-service").sendMail({
+                to: admin.email,
+                subject: "New Application Forwarded to ERC Technical Committee",
+                html: appDetails,
+                from: {
+                  name: staffName,
+                  address: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+                },
+              });
+            }
+          }
+        }
+      }
+
       res.json(application);
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -113,14 +188,30 @@ const officeStaffController = {
       }
       const application = await Application.findOne({
         where: { application_id: id },
-        include: [{ model: require("../models").Applicant, as: "applicant" }],
+        include: [
+          {
+            model: require("../models").Applicant,
+            as: "applicant",
+            include: [
+              {
+                model: require("../models").User,
+                as: "user",
+                attributes: ["first_name", "last_name", "email"],
+              },
+            ],
+          },
+        ],
       });
-      if (!application || !application.applicant) {
+      if (
+        !application ||
+        !application.applicant ||
+        !application.applicant.user
+      ) {
         return res
           .status(404)
-          .json({ error: "Applicant not found for this application" });
+          .json({ error: "Applicant user not found for this application" });
       }
-      const { first_name, last_name, email } = application.applicant;
+      const { first_name, last_name, email } = application.applicant.user;
       const subject = "Your ERC Application Has Been Returned for Resubmission";
       const html = `<p>Dear ${first_name} ${last_name},</p>
         <p>Your application (ID: ${id}) has been returned for resubmission for the following reason:</p>
@@ -192,5 +283,64 @@ const setApplicationStatus = async (req, res) => {
   }
 };
 
+// Office Staff Dashboard: Stats
+async function getDashboardStats(req, res) {
+  try {
+    const { Application } = require("../models");
+    const total = await Application.count();
+    const pending = await Application.count({ where: { status: "SUBMITTED" } });
+    const checked = await Application.count({
+      where: { status: "DOCUMENT_CHECK" },
+    });
+    const returned = await Application.count({
+      where: { status: "RETURNED_FOR_RESUBMISSION" },
+    });
+    const forwarded = await Application.count({
+      where: { status: "PRELIMINARY_REVIEW" },
+    });
+    const approved = await Application.count({ where: { status: "APPROVED" } });
+    res.json({ total, pending, checked, returned, forwarded, approved });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+// Office Staff Dashboard: Recent Activities
+async function getRecentActivities(req, res) {
+  try {
+    const { Application } = require("../models");
+    const limit = parseInt(req.query.limit) || 10;
+    const activities = await Application.findAll({
+      order: [["last_updated", "DESC"]],
+      limit,
+      attributes: [
+        "application_id",
+        "status",
+        "last_updated",
+        "research_type",
+        "application_type",
+      ],
+      include: [
+        {
+          model: require("../models").Applicant,
+          as: "applicant",
+          include: [
+            {
+              model: require("../models").User,
+              as: "user",
+              attributes: ["first_name", "last_name", "email"],
+            },
+          ],
+        },
+      ],
+    });
+    res.json(activities);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
 module.exports = officeStaffController;
 module.exports.setApplicationStatus = setApplicationStatus;
+module.exports.getDashboardStats = getDashboardStats;
+module.exports.getRecentActivities = getRecentActivities;

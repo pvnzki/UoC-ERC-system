@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { useState } from "react";
 import { useTheme } from "../context/theme/ThemeContext";
-import Home from "../pages/OfficeStaff/Office_Home.jsx";
+import Dashboard from "../pages/OfficeStaff/Dashboard.jsx";
 import Office_Header from "../components/OfficeStaff/genaral/Office_Header.jsx";
 import Sidebar from "../components/OfficeStaff/genaral/SideBar.jsx";
 import ApplicationDetails from "../components/OfficeStaff/genaral/ApplicationDetails.jsx";
@@ -37,7 +37,7 @@ const OfficeStaffRoutes = () => {
           }`}
         >
           <Routes>
-            <Route path="/officestaff" element={<Home />} />
+            <Route path="" element={<Dashboard />} />
             <Route path="/applications" element={<Applications />} />
             <Route path="applications/:id" element={<ApplicationDetails />} />
             <Route path="/eval/:id" element={<Eval />} />

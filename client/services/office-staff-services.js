@@ -95,18 +95,6 @@ export const officeStaffServices = {
     return response.data;
   },
 
-  // Forward application to committee
-  forwardApplication: async (applicationId, committeeId) => {
-    const instance = createAuthInstance();
-    const response = await instance.put(
-      `/office-staff/applications/${applicationId}/forward`,
-      {
-        committeeId,
-      }
-    );
-    return response.data;
-  },
-
   // Return application to applicant
   returnApplication: async (applicationId, reason) => {
     const instance = createAuthInstance();

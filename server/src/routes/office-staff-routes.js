@@ -22,5 +22,7 @@ router.patch(
   "/applications/:id/set-status",
   officeStaffController.setApplicationStatus
 );
+router.get("/dashboard/stats", officeStaffController.getDashboardStats);
+router.get("/dashboard/activities", officeStaffController.getRecentActivities);
 
 module.exports = router;
