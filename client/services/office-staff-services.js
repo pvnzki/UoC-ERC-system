@@ -119,6 +119,35 @@ export const officeStaffServices = {
     return response.data;
   },
 
+  // Mark application as checked
+  markChecked: async (applicationId) => {
+    const instance = createAuthInstance();
+    const response = await instance.post(
+      `/office-staff/applications/${applicationId}/checked`
+    );
+    return response.data;
+  },
+
+  // Mark outcome (forward/return)
+  markOutcome: async (applicationId, outcome) => {
+    const instance = createAuthInstance();
+    const response = await instance.post(
+      `/office-staff/applications/${applicationId}/outcome`,
+      { outcome }
+    );
+    return response.data;
+  },
+
+  // Send return email to applicant
+  sendReturnEmail: async (applicationId, reason) => {
+    const instance = createAuthInstance();
+    const response = await instance.post(
+      `/office-staff/applications/${applicationId}/return-email`,
+      { reason }
+    );
+    return response.data;
+  },
+
   // Get dashboard statistics
   getDashboardStats: async () => {
     const instance = createAuthInstance();

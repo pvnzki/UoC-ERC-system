@@ -1,11 +1,11 @@
 import { Search, X, Bell, Settings } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../../assets/Applicant/logo-menu.png";
 import defaultProfile from "../../../assets/default-profile.png";
 import { useAuth } from "../../../../context/auth/AuthContext";
 import { useTheme } from "../../../context/theme/ThemeContext";
-import UserProfileModal from "../../TechnicalAdmin/genaral/UserProfileModal";
+import UserProfileModal from "./UserProfileModal";
 import ThemeToggle from "../../common/ThemeToggle";
 
 const Office_Header = () => {
@@ -18,7 +18,7 @@ const Office_Header = () => {
 
   const navigate = useNavigate();
 
-  // Sample Data
+  // Sample Data for applicant search (you can replace with API call later)
   const applicants = [
     { id: 1, name: "Alice Johnson", email: "alice@example.com" },
     { id: 2, name: "Bob Smith", email: "bob@example.com" },
@@ -59,20 +59,32 @@ const Office_Header = () => {
     setSearchQuery("");
   };
 
+  useEffect(() => {}, []);
+
   return (
     <>
       {/* Header */}
       <header
-        className={`bg-gradient-to-r from-[#0A1F44] to-[#0F2E64] border-b border-white/20 shadow-lg px-6 md:px-16 lg:px-32 py-4 flex items-center justify-between z-50 fixed top-0 left-0 right-0 transition-all duration-500 ease-in-out ${
+        className={`bg-gradient-to-r from-[#0A1F44] to-[#0F2E64] border-b border-white/20 shadow-2xl px-6 md:px-16 lg:px-32 py-4 flex items-center justify-between z-50 fixed top-0 left-0 right-0 transition-all duration-500 ease-in-out ${
           isDarkMode ? "dark" : ""
         }`}
-        style={{ backdropFilter: "blur(0px)" }}
+        style={{
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderRadius: "0 0 20px 20px",
+          boxShadow:
+            "0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+        }}
       >
         <div className="flex items-center">
           <img
             src={logo}
             alt="Faculty Logo"
-            className="h-10 md:h-12 object-contain float transition-all duration-700 ease-in-out"
+            className="h-10 md:h-12 object-contain transition-all duration-700 ease-in-out drop-shadow-lg hover:scale-105 hover:brightness-110"
+            style={{
+              filter: "drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))",
+              animation: "logoGlow 3s ease-in-out infinite alternate",
+            }}
           />
         </div>
 
@@ -84,12 +96,22 @@ const Office_Header = () => {
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search Applicant..."
-              className="w-full bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-3 rounded-full focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 placeholder-gray-200 transition-all duration-500 ease-in-out shadow-sm"
+              className="w-full bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-3 rounded-full focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 placeholder-gray-300 transition-all duration-500 ease-in-out shadow-lg"
+              style={{
+                boxShadow:
+                  "0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+              }}
             />
-            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-200 w-5 h-5 pointer-events-none transition-all duration-500" />
+            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-300 w-5 h-5 pointer-events-none transition-all duration-500" />
           </div>
           {filteredResults.length > 0 && (
-            <div className="absolute top-full mt-2 left-0 w-full glass-card overflow-hidden z-50 animate-fade-in">
+            <div
+              className="absolute top-full mt-2 left-0 w-full glass-card overflow-hidden z-50 animate-fade-in rounded-xl"
+              style={{
+                boxShadow:
+                  "0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+              }}
+            >
               {filteredResults.map((applicant) => (
                 <div
                   key={applicant.id}
@@ -98,7 +120,7 @@ const Office_Header = () => {
                   tabIndex={0}
                 >
                   <div className="text-white font-medium">{applicant.name}</div>
-                  <div className="text-gray-200 text-sm">{applicant.email}</div>
+                  <div className="text-gray-300 text-sm">{applicant.email}</div>
                 </div>
               ))}
             </div>
@@ -110,51 +132,77 @@ const Office_Header = () => {
           {/* Theme Toggle */}
           <ThemeToggle className="transition-all duration-500 ease-in-out" />
           {/* Notifications */}
-          <button className="liquid-button p-3 rounded-full relative transition-all duration-500 ease-in-out hover:scale-105 active:scale-95 focus:ring-2 focus:ring-blue-400/40">
-            <Bell className="w-5 h-5 text-white" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-md">
-              2
+          <button
+            className="p-2.5 rounded-full relative transition-all duration-500 ease-in-out hover:scale-105 active:scale-95 focus:ring-2 focus:ring-blue-400/40"
+            style={{
+              background: "rgba(255, 255, 255, 0.1)",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              boxShadow:
+                "0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+            }}
+          >
+            <Bell className="w-4 h-4 text-white" />
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center shadow-md text-[10px]">
+              3
             </span>
-          </button>
-          {/* Settings */}
-          <button className="liquid-button p-3 rounded-full transition-all duration-500 ease-in-out hover:scale-105 active:scale-95 focus:ring-2 focus:ring-blue-400/40">
-            <Settings className="w-5 h-5 text-white" />
           </button>
           {/* Mobile Search Icon */}
           <button
             onClick={() => setShowSearch(!showSearch)}
-            className="block md:hidden liquid-button p-3 rounded-full transition-all duration-500 ease-in-out hover:scale-105 active:scale-95"
+            className="block md:hidden p-2.5 rounded-full transition-all duration-500 ease-in-out hover:scale-105 active:scale-95"
+            style={{
+              background: "rgba(255, 255, 255, 0.1)",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              boxShadow:
+                "0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+            }}
           >
             {showSearch ? (
-              <X className="w-5 h-5 text-white" />
+              <X className="w-4 h-4 text-white" />
             ) : (
-              <Search className="w-5 h-5 text-white" />
+              <Search className="w-4 h-4 text-white" />
             )}
           </button>
-          {/* Profile Section */}
+          {/* Profile Section - Dynamic User Data */}
           <div
-            className="flex items-center gap-3 cursor-pointer hover:opacity-90 active:scale-95 transition-all duration-500 ease-in-out glass-card px-4 py-2 rounded-full shadow-md"
+            className="flex items-center gap-3 cursor-pointer hover:opacity-90 active:scale-95 transition-all duration-500 ease-in-out px-4 py-2 rounded-full shadow-lg"
             onClick={() => setShowProfileModal(true)}
             tabIndex={0}
+            style={{
+              background: "rgba(255, 255, 255, 0.1)",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              boxShadow:
+                "0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+            }}
           >
             <img
               src={userData?.profile_pic || defaultProfile}
               alt="User Profile"
-              className="h-10 w-10 md:h-14 md:w-14 rounded-full border-2 border-white/30 object-cover glow transition-all duration-500"
+              className="h-9 w-9 md:h-11 md:w-11 rounded-full border-2 border-white/30 object-cover glow transition-all duration-500"
+              style={{
+                boxShadow:
+                  "0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2)",
+              }}
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = defaultProfile;
               }}
             />
             <div className="text-white hidden md:block">
-              <p className="text-sm md:text-lg font-semibold">
+              <p className="text-sm md:text-base font-semibold">
                 {userData
                   ? `${userData.first_name || "User"} ${
                       userData.last_name || ""
                     }`
                   : "Guest User"}
               </p>
-              <p className="text-xs md:text-sm text-gray-200">
+              <p className="text-xs md:text-sm text-gray-300">
                 {formatRole(userData?.role)}
               </p>
             </div>
@@ -171,9 +219,9 @@ const Office_Header = () => {
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search Applicant..."
-              className="w-full bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-3 rounded-full focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 placeholder-gray-200 transition-all duration-500 ease-in-out shadow-sm"
+              className="w-full bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-3 rounded-full focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 placeholder-gray-300 transition-all duration-500 ease-in-out shadow-sm"
             />
-            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-200 w-5 h-5 pointer-events-none transition-all duration-500" />
+            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-300 w-5 h-5 pointer-events-none transition-all duration-500" />
           </div>
           {filteredResults.length > 0 && (
             <div className="mt-2 glass-card overflow-hidden animate-fade-in">
@@ -185,7 +233,7 @@ const Office_Header = () => {
                   tabIndex={0}
                 >
                   <div className="text-white font-medium">{applicant.name}</div>
-                  <div className="text-gray-200 text-sm">{applicant.email}</div>
+                  <div className="text-gray-300 text-sm">{applicant.email}</div>
                 </div>
               ))}
             </div>

@@ -113,21 +113,23 @@ const CreateUserForm = ({ onSubmit, committees }) => {
             : "0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1)",
         }}
       >
-        <h3 className="text-lg font-semibold mb-3">
-          Confirm User Creation
-        </h3>
-        <p className={`mb-3 text-sm ${
-          isDarkMode ? "text-gray-300" : "text-gray-600"
-        }`}>
+        <h3 className="text-lg font-semibold mb-3">Confirm User Creation</h3>
+        <p
+          className={`mb-3 text-sm ${
+            isDarkMode ? "text-gray-300" : "text-gray-600"
+          }`}
+        >
           Are you sure you want to create an account for{" "}
           <strong>
             {formData.firstName} {formData.lastName}
           </strong>
           ?
         </p>
-        <p className={`mb-4 text-sm flex items-center gap-2 ${
-          isDarkMode ? "text-gray-400" : "text-gray-500"
-        }`}>
+        <p
+          className={`mb-4 text-sm flex items-center gap-2 ${
+            isDarkMode ? "text-gray-400" : "text-gray-500"
+          }`}
+        >
           <Mail size={16} className="text-blue-500" />
           An email with login credentials will be sent to{" "}
           <strong>{formData.email}</strong>.
@@ -171,15 +173,17 @@ const CreateUserForm = ({ onSubmit, committees }) => {
     <>
       <div
         className={`backdrop-blur-xl border shadow-xl rounded-2xl p-4 mb-4 relative ${
-          isDarkMode 
-            ? "bg-gray-800/90 border-gray-700/50 text-white" 
+          isDarkMode
+            ? "bg-gray-800/90 border-gray-700/50 text-white"
             : "bg-white/90 border-gray-200/50 text-gray-900"
         }`}
       >
         <h2 className="text-lg font-semibold mb-4 flex items-center">
-          <User className={`w-5 h-5 mr-2 ${
-            isDarkMode ? "text-purple-400" : "text-purple-600"
-          }`} />
+          <User
+            className={`w-5 h-5 mr-2 ${
+              isDarkMode ? "text-purple-400" : "text-purple-600"
+            }`}
+          />
           Create New User
         </h2>
 
@@ -315,7 +319,10 @@ const CreateUserForm = ({ onSubmit, committees }) => {
               >
                 <option value="">Select Committee</option>
                 {committees.map((committee) => (
-                  <option key={committee.committee_id} value={committee.committee_id}>
+                  <option
+                    key={committee.committee_id}
+                    value={committee.committee_id}
+                  >
                     {committee.committee_name}
                   </option>
                 ))}
@@ -368,7 +375,8 @@ const CreateUserForm = ({ onSubmit, committees }) => {
       </div>
 
       {/* Confirmation Modal Portal */}
-      {showConfirmation && createPortal(confirmationModalContent, document.body)}
+      {showConfirmation &&
+        createPortal(confirmationModalContent, document.body)}
     </>
   );
 };

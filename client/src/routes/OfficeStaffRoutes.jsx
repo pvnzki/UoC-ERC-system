@@ -8,6 +8,7 @@ import ApplicationDetails from "../components/OfficeStaff/genaral/ApplicationDet
 import ApprovedApplications from "../pages/OfficeStaff/ApprovedApplications.jsx";
 import ReturendApplications from "../pages/OfficeStaff/ReturnApplication.jsx";
 import Eval from "../pages/OfficeStaff/Evaluated.jsx";
+import Applications from "../pages/OfficeStaff/Applications.jsx";
 
 const OfficeStaffRoutes = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -36,8 +37,9 @@ const OfficeStaffRoutes = () => {
           }`}
         >
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/:id" element={<ApplicationDetails />} />
+            <Route path="/officestaff" element={<Home />} />
+            <Route path="/applications" element={<Applications />} />
+            <Route path="applications/:id" element={<ApplicationDetails />} />
             <Route path="/eval/:id" element={<Eval />} />
             <Route
               path="/approved-applications"

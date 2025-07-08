@@ -87,10 +87,10 @@ function buildUserWelcomeEmail({
       extraDetails += `<p style="margin: 5px 0;"><strong>Committee ID:</strong> ${committeeId}</p>`;
     }
     subject = "Your ERC Committee Member Account";
-  } else if (role === "STAFF") {
-    roleDisplay = "Staff";
-    extraDetails = `<p style="margin: 5px 0;"><strong>Role:</strong> Staff (You can process and manage applications in the system.)</p>`;
-    subject = "Your ERC Staff Account";
+  } else if (role === "OFFICE_STAFF") {
+    roleDisplay = "Office Staff";
+    extraDetails = `<p style="margin: 5px 0;"><strong>Role:</strong> Office Staff (You can process and manage applications in the system.)</p>`;
+    subject = "Your ERC Office Staff Account";
   } else {
     roleDisplay = role;
   }
@@ -130,8 +130,8 @@ function buildUserDeletionEmail({ firstName, lastName, email, role }) {
       ? "Administrator"
       : role === "COMMITTEE_MEMBER"
         ? "Committee Member"
-        : role === "STAFF"
-          ? "Staff"
+        : role === "OFFICE_STAFF"
+          ? "Office Staff"
           : role;
 
   const html = `
@@ -177,7 +177,11 @@ function buildCommitteeAdditionEmail({
   role,
 }) {
   const roleDisplay =
-    role === "MEMBER" ? "Committee Member" : role === "STAFF" ? "Staff" : role;
+    role === "MEMBER"
+      ? "Committee Member"
+      : role === "OFFICE_STAFF"
+        ? "Office Staff"
+        : role;
 
   const html = `
     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px; background: #f8fafd; border-radius: 12px; border: 1px solid #e0e6ed; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
@@ -224,7 +228,11 @@ function buildCommitteeRemovalEmail({
   role,
 }) {
   const roleDisplay =
-    role === "MEMBER" ? "Committee Member" : role === "STAFF" ? "Staff" : role;
+    role === "MEMBER"
+      ? "Committee Member"
+      : role === "OFFICE_STAFF"
+        ? "Office Staff"
+        : role;
 
   const html = `
     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px; background: #f8fafd; border-radius: 12px; border: 1px solid #e0e6ed; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
@@ -275,8 +283,8 @@ function buildUserStatusUpdateEmail({
       ? "Administrator"
       : role === "COMMITTEE_MEMBER"
         ? "Committee Member"
-        : role === "STAFF"
-          ? "Staff"
+        : role === "OFFICE_STAFF"
+          ? "Office Staff"
           : role;
 
   const statusColor = newStatus ? "#28a745" : "#dc3545";

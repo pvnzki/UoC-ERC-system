@@ -92,6 +92,9 @@ router.get("/analytics", adminController.getAnalyticsData);
 // Add 2FA column to Users table (one-time fix route)
 router.get("/fix/add-2fa-column", adminController.add2FAColumn);
 
+// Utility route to add OFFICE_STAFF to CommitteeMembers.role ENUM
+router.post("/fix/add-office-staff-enum", adminController.addOfficeStaffEnum);
+
 // 2FA endpoints for admin
 router.post("/security/2fa/enable", adminController.set2FA); // { enable: true/false }
 // router.post("/security/2fa/request", adminController.request2FACode); // { email }
