@@ -25,29 +25,13 @@ module.exports = (sequelize, DataTypes) => {
         autoIncrement: true,
         primaryKey: true,
       },
-      // user_id: {
-      //   type: DataTypes.INTEGER,
-      //   allowNull: false,
-      //   references: {
-      //     model: "Users",
-      //     key: "user_id",
-      //   },
-      // },
-      applicant_category: {
-        type: DataTypes.STRING,
+      user_id: {
+        type: DataTypes.INTEGER,
         allowNull: false,
-      },
-      first_name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      last_name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      email: {
-        type: DataTypes.STRING,
-          allowNull: false,
+        references: {
+          model: "Users",
+          key: "user_id",
+        },
       },
       applicant_category: {
         type: DataTypes.ENUM(
@@ -59,9 +43,6 @@ module.exports = (sequelize, DataTypes) => {
           "researcher_health"
         ),
         allowNull: false,
-        validate: {
-          isEmail: true,
-        },
       },
       evidence_url: {
         type: DataTypes.TEXT, // Store the Cloudinary URL

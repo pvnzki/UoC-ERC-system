@@ -95,18 +95,6 @@ export const officeStaffServices = {
     return response.data;
   },
 
-  // Forward application to committee
-  forwardApplication: async (applicationId, committeeId) => {
-    const instance = createAuthInstance();
-    const response = await instance.put(
-      `/office-staff/applications/${applicationId}/forward`,
-      {
-        committeeId,
-      }
-    );
-    return response.data;
-  },
-
   // Return application to applicant
   returnApplication: async (applicationId, reason) => {
     const instance = createAuthInstance();
@@ -115,6 +103,35 @@ export const officeStaffServices = {
       {
         reason,
       }
+    );
+    return response.data;
+  },
+
+  // Mark application as checked
+  markChecked: async (applicationId) => {
+    const instance = createAuthInstance();
+    const response = await instance.post(
+      `/office-staff/applications/${applicationId}/checked`
+    );
+    return response.data;
+  },
+
+  // Mark outcome (forward/return)
+  markOutcome: async (applicationId, outcome) => {
+    const instance = createAuthInstance();
+    const response = await instance.post(
+      `/office-staff/applications/${applicationId}/outcome`,
+      { outcome }
+    );
+    return response.data;
+  },
+
+  // Send return email to applicant
+  sendReturnEmail: async (applicationId, reason) => {
+    const instance = createAuthInstance();
+    const response = await instance.post(
+      `/office-staff/applications/${applicationId}/return-email`,
+      { reason }
     );
     return response.data;
   },

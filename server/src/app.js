@@ -7,6 +7,7 @@ const authRoutes = require("./routes/auth-routes");
 const applicationRoutes = require("./routes/application-routes");
 const authorizeRoles = require("./utils/auth-roles");
 const adminRoutes = require("./routes/admin-routes");
+const officeStaffRoutes = require("./routes/office-staff-routes");
 const { isAuthenticated, isAdmin } = require("./middleware/auth-middleware");
 
 const corsOptions = {
@@ -32,6 +33,7 @@ app.use(cors(corsOptions));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/applications", authorizeRoles("applicant"), applicationRoutes);
+app.use("/api/office-staff", officeStaffRoutes);
 
 // Public 2FA endpoints (must come before the protected admin routes)
 app.post(

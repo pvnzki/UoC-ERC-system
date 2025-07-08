@@ -46,7 +46,10 @@ const adminController = {
       }
 
       // Only check committee existence and insert into CommitteeMembers if committeeId is provided
-      if ((role === "COMMITTEE_MEMBER" || role === "STAFF") && committeeId) {
+      if (
+        (role === "COMMITTEE_MEMBER" || role === "OFFICE_STAFF") &&
+        committeeId
+      ) {
         const committeeExists = await db.sequelize.query(
           `SELECT 1 FROM "Committees" WHERE committee_id = ${committeeId}`,
           { type: db.sequelize.QueryTypes.SELECT }
@@ -100,19 +103,22 @@ const adminController = {
           ${userId}, '${userType || "ERC_TECHNICAL"}', NOW(), NOW()
         )
       `);
-      } else if (role === "COMMITTEE_MEMBER" || role === "STAFF") {
+      } else if (role === "COMMITTEE_MEMBER" || role === "OFFICE_STAFF") {
         // Only insert into CommitteeMembers if committeeId is provided
-        if ((role === "COMMITTEE_MEMBER" || role === "STAFF") && committeeId) {
+        if (
+          (role === "COMMITTEE_MEMBER" || role === "OFFICE_STAFF") &&
+          committeeId
+        ) {
           await db.sequelize.query(`
           INSERT INTO "CommitteeMembers" (
             user_id, committee_id, role, created_at, updated_at
           ) VALUES (
-            ${userId}, ${committeeId}, '${role === "COMMITTEE_MEMBER" ? "MEMBER" : "STAFF"}', 
+            ${userId}, ${committeeId}, '${role === "COMMITTEE_MEMBER" ? "MEMBER" : "OFFICE_STAFF"}', 
             NOW(), NOW()
           )
         `);
         } else if (
-          (role === "COMMITTEE_MEMBER" || role === "STAFF") &&
+          (role === "COMMITTEE_MEMBER" || role === "OFFICE_STAFF") &&
           !committeeId
         ) {
           // No committee assignment at creation; can be assigned later
@@ -1755,6 +1761,36 @@ const adminController = {
   },
 };
 
+// Utility endpoint to add OFFICE_STAFF to CommitteeMembers.role ENUM
+const addOfficeStaffEnum = async (req, res) => {
+  try {
+    await require("../models").sequelize.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_type WHERE typname = 'enum_CommitteeMembers_role'
+        ) THEN
+          RAISE NOTICE 'Enum type does not exist!';
+        ELSE
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_enum
+            WHERE enumlabel = 'OFFICE_STAFF'
+            AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'enum_CommitteeMembers_role')
+          ) THEN
+            ALTER TYPE "enum_CommitteeMembers_role" ADD VALUE 'OFFICE_STAFF';
+          END IF;
+        END IF;
+      END
+      $$;
+    `);
+    res
+      .status(200)
+      .json({ message: "OFFICE_STAFF added to ENUM if not already present." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // In-memory store for 2FA codes (for demo; use Redis or DB in production)
 const twoFACodeStore = {};
 
@@ -1866,13 +1902,11 @@ async function verify2FACode(req, res) {
       last_name: user.last_name,
       is_2fa_enabled: user.is_2fa_enabled,
     };
-    return res
-      .status(200)
-      .json({
-        message: "2FA verification successful.",
-        auth: token,
-        data: userData,
-      });
+    return res.status(200).json({
+      message: "2FA verification successful.",
+      auth: token,
+      data: userData,
+    });
   } catch (error) {
     console.error("Error verifying 2FA code:", error);
     return res.status(500).json({ error: error.message });
@@ -1899,4 +1933,5 @@ module.exports = {
   request2FACode,
   verify2FACode,
   listUsers2FAStatus, // TEMP: export the new endpoint
+  addOfficeStaffEnum, // Add the new utility endpoint to exports
 };

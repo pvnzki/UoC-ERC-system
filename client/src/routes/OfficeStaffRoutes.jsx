@@ -1,13 +1,14 @@
 import { Routes, Route } from "react-router-dom";
 import { useState } from "react";
 import { useTheme } from "../context/theme/ThemeContext";
-import Home from "../pages/OfficeStaff/Office_Home.jsx";
+import Dashboard from "../pages/OfficeStaff/Dashboard.jsx";
 import Office_Header from "../components/OfficeStaff/genaral/Office_Header.jsx";
 import Sidebar from "../components/OfficeStaff/genaral/SideBar.jsx";
 import ApplicationDetails from "../components/OfficeStaff/genaral/ApplicationDetails.jsx";
 import ApprovedApplications from "../pages/OfficeStaff/ApprovedApplications.jsx";
 import ReturendApplications from "../pages/OfficeStaff/ReturnApplication.jsx";
 import Eval from "../pages/OfficeStaff/Evaluated.jsx";
+import Applications from "../pages/OfficeStaff/Applications.jsx";
 
 const OfficeStaffRoutes = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -36,8 +37,9 @@ const OfficeStaffRoutes = () => {
           }`}
         >
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/:id" element={<ApplicationDetails />} />
+            <Route path="" element={<Dashboard />} />
+            <Route path="/applications" element={<Applications />} />
+            <Route path="applications/:id" element={<ApplicationDetails />} />
             <Route path="/eval/:id" element={<Eval />} />
             <Route
               path="/approved-applications"

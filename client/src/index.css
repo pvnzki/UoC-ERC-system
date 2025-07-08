@@ -196,6 +196,68 @@
     border-color: rgba(75, 85, 99, 0.5);
 }
 
+/* --- Refined Liquid Card Glassmorphic Effect (Subtle & Professional) --- */
+.liquid-card {
+    background: rgba(255, 255, 255, 0.10);
+    border: 1.2px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 18px 0 rgba(31, 38, 135, 0.08);
+    backdrop-filter: blur(10px) saturate(160%);
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    transition: box-shadow 0.25s, transform 0.25s;
+    position: relative;
+    overflow: hidden;
+}
+
+.liquid-card::before {
+    content: '';
+    position: absolute;
+    left: -40%;
+    top: -40%;
+    width: 180%;
+    height: 180%;
+    background: linear-gradient(120deg, rgba(0, 184, 255, 0.06) 0%, rgba(255, 255, 255, 0.08) 60%, rgba(59, 130, 246, 0.06) 100%);
+    filter: blur(10px);
+    z-index: 0;
+    pointer-events: none;
+    animation: glass-move-refined 8s linear infinite;
+}
+
+.liquid-card:hover {
+    transform: scale(1.012);
+    box-shadow: 0 8px 24px 0 rgba(31, 38, 135, 0.12);
+}
+
+@keyframes glass-move-refined {
+    0% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    100% {
+        transform: translateY(-8%) rotate(2deg);
+    }
+}
+
+.liquid-card>* {
+    position: relative;
+    z-index: 1;
+}
+
+.dark .liquid-card {
+    background: rgba(30, 41, 59, 0.40);
+    border: 1.2px solid rgba(59, 130, 246, 0.10);
+    box-shadow: 0 4px 18px 0 rgba(0, 184, 255, 0.07);
+}
+
+.dark .liquid-card::before {
+    background: linear-gradient(120deg, rgba(59, 130, 246, 0.06) 0%, rgba(255, 255, 255, 0.04) 60%, rgba(0, 184, 255, 0.06) 100%);
+    filter: blur(11px);
+    animation: glass-move-refined 8s linear infinite;
+}
+
+.dark .liquid-card:hover {
+    box-shadow: 0 10px 28px 0 rgba(0, 184, 255, 0.10);
+}
+
 /* Professional Logo Glow Animation */
 @keyframes logoGlow {
     0% {
@@ -208,21 +270,6 @@
 
     100% {
         filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) brightness(1);
-    }
-}
-
-/* Dark mode logo glow */
-.dark @keyframes logoGlow {
-    0% {
-        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5)) brightness(1);
-    }
-
-    50% {
-        filter: drop-shadow(0 4px 12px rgba(96, 165, 250, 0.3)) brightness(1.1);
-    }
-
-    100% {
-        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5)) brightness(1);
     }
 }
 
@@ -388,4 +435,31 @@
     100% {
         content: '...';
     }
+}
+
+/* --- Subtler Liquid Card Shadow (Less Blue, More Neutral) --- */
+.liquid-card {
+    box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.06), 0 1.5px 8px 0 rgba(0, 0, 0, 0.04);
+}
+
+.liquid-card:hover {
+    box-shadow: 0 8px 20px 0 rgba(31, 38, 135, 0.09), 0 2px 12px 0 rgba(0, 0, 0, 0.06);
+}
+
+.dark .liquid-card {
+    box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.10), 0 1.5px 8px 0 rgba(0, 0, 0, 0.06);
+}
+
+.dark .liquid-card:hover {
+    box-shadow: 0 10px 24px 0 rgba(0, 0, 0, 0.13);
+}
+
+/* --- More Neutral Liquid Card for Dark Mode (Less Blue) --- */
+.dark .liquid-card {
+    background: rgba(36, 41, 47, 0.48);
+    border: 1.2px solid rgba(120, 130, 140, 0.13);
+}
+
+.dark .liquid-card::before {
+    background: linear-gradient(120deg, rgba(120, 130, 140, 0.06) 0%, rgba(255, 255, 255, 0.03) 60%, rgba(80, 90, 100, 0.06) 100%);
 }
