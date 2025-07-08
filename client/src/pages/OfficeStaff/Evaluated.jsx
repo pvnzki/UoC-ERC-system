@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Loader2, AlertCircle } from "lucide-react";
 import pdf from "../../assets/OfficeStaff/Group 4.png";
 import { officeStaffServices } from "../../../services/office-staff-services";
+import BeatLoader from "../../components/common/BeatLoader";
 
 const Card = ({ children, className = "" }) => (
   <div className={`bg-white rounded-lg shadow-md p-6 ${className}`}>
@@ -23,10 +24,10 @@ const EvaluatedApplicationDetails = () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         const response = await officeStaffServices.getApplication(id);
         setApplicationDetails(response.application || response);
-        
+
         // If documents are included in the response, use them
         if (response.documents) {
           setDocuments(response.documents);
@@ -70,8 +71,10 @@ const EvaluatedApplicationDetails = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-lg text-gray-600">Loading application details...</p>
+          <BeatLoader />
+          <p className="text-lg text-gray-600">
+            Loading application details...
+          </p>
         </div>
       </div>
     );
@@ -90,7 +93,9 @@ const EvaluatedApplicationDetails = () => {
 
   if (!applicationDetails) {
     return (
-      <div className="text-center text-lg font-semibold p-6">Application not found</div>
+      <div className="text-center text-lg font-semibold p-6">
+        Application not found
+      </div>
     );
   }
 
@@ -105,28 +110,46 @@ const EvaluatedApplicationDetails = () => {
         <div className="border-b pb-4 mb-4 grid grid-cols-2 gap-4 text-sm text-gray-700">
           <div>
             <p>
-              <strong>User Name:</strong> {applicationDetails.applicant ? `${applicationDetails.applicant.first_name || ''} ${applicationDetails.applicant.last_name || ''}`.trim() : 'N/A'}
+              <strong>User Name:</strong>{" "}
+              {applicationDetails.applicant
+                ? `${applicationDetails.applicant.first_name || ""} ${
+                    applicationDetails.applicant.last_name || ""
+                  }`.trim()
+                : "N/A"}
             </p>
             <p>
-              <strong>User ID:</strong> {applicationDetails.applicant?.applicant_id || applicationDetails.application_id || 'N/A'}
+              <strong>User ID:</strong>{" "}
+              {applicationDetails.applicant?.applicant_id ||
+                applicationDetails.application_id ||
+                "N/A"}
             </p>
             <p>
-              <strong>User Email:</strong> {applicationDetails.applicant?.email || 'N/A'}
+              <strong>User Email:</strong>{" "}
+              {applicationDetails.applicant?.email || "N/A"}
             </p>
             <p>
               <strong>Application Category:</strong>{" "}
-              {applicationDetails.research_category || applicationDetails.category || 'N/A'}
+              {applicationDetails.research_category ||
+                applicationDetails.category ||
+                "N/A"}
             </p>
             <p>
-              <strong>Research Type:</strong> {applicationDetails.research_type || 'N/A'}
+              <strong>Research Type:</strong>{" "}
+              {applicationDetails.research_type || "N/A"}
             </p>
           </div>
           <div>
             <p>
-              <strong>Apply Date:</strong> {applicationDetails.created_at ? new Date(applicationDetails.created_at).toLocaleDateString() : 'N/A'}
+              <strong>Apply Date:</strong>{" "}
+              {applicationDetails.created_at
+                ? new Date(applicationDetails.created_at).toLocaleDateString()
+                : "N/A"}
             </p>
             <p>
-              <strong>Apply Time:</strong> {applicationDetails.created_at ? new Date(applicationDetails.created_at).toLocaleTimeString() : 'N/A'}
+              <strong>Apply Time:</strong>{" "}
+              {applicationDetails.created_at
+                ? new Date(applicationDetails.created_at).toLocaleTimeString()
+                : "N/A"}
             </p>
           </div>
         </div>

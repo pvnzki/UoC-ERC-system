@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "../../../context/theme/ThemeContext";
 import { adminServices } from "../../../../services/admin-services";
+import BeatLoader from "../../common/BeatLoader";
 
 const Analytics = () => {
   const { isDarkMode } = useTheme();
@@ -279,7 +280,7 @@ const Analytics = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <BeatLoader className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
           <p
             className={`text-lg ${
               isDarkMode ? "text-gray-300" : "text-gray-600"

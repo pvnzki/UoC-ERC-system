@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { 
-  Calendar, 
-  CalendarPlus, 
-  X, 
+import {
+  Calendar,
+  CalendarPlus,
+  X,
   AlertTriangle,
-  FileText
+  FileText,
 } from "lucide-react";
 import { adminServices } from "../../../../services/admin-services";
 import MeetingDetailsModal from "./MeetingDetailsModal";
 import MeetingSummaryModal from "./MeetingSummaryModal";
 import LetterModal from "./LetterModal";
 import { useTheme } from "../../../context/theme/ThemeContext";
+import BeatLoader from "../../common/BeatLoader";
 
 const MeetingManagement = () => {
   const { isDarkMode } = useTheme();
@@ -162,18 +163,20 @@ const MeetingManagement = () => {
   return (
     <div className="space-y-4">
       {/* Compact Header */}
-      <div className={`p-4 rounded-lg backdrop-blur-xl border ${
-        isDarkMode 
-          ? "bg-gray-800/50 border-gray-700/50 text-white" 
-          : "bg-white/70 border-gray-200/50 text-gray-900"
-      } shadow-lg`}>
+      <div
+        className={`p-4 rounded-lg backdrop-blur-xl border ${
+          isDarkMode
+            ? "bg-gray-800/50 border-gray-700/50 text-white"
+            : "bg-white/70 border-gray-200/50 text-gray-900"
+        } shadow-lg`}
+      >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
           <div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
               Meetings
             </h1>
           </div>
-          
+
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
             className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
@@ -199,11 +202,13 @@ const MeetingManagement = () => {
 
       {/* Create Meeting Form */}
       {showCreateForm && (
-        <div className={`p-4 rounded-lg backdrop-blur-xl border ${
-          isDarkMode 
-            ? "bg-gray-800/50 border-gray-700/50 text-white" 
-            : "bg-white/70 border-gray-200/50 text-gray-900"
-        } shadow-lg`}>
+        <div
+          className={`p-4 rounded-lg backdrop-blur-xl border ${
+            isDarkMode
+              ? "bg-gray-800/50 border-gray-700/50 text-white"
+              : "bg-white/70 border-gray-200/50 text-gray-900"
+          } shadow-lg`}
+        >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Create New Meeting</h2>
             <button
@@ -218,15 +223,20 @@ const MeetingManagement = () => {
             </button>
           </div>
 
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            handleCreateMeeting(newMeeting);
-          }} className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleCreateMeeting(newMeeting);
+            }}
+            className="space-y-4"
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className={`block text-sm font-medium mb-2 ${
-                  isDarkMode ? "text-gray-300" : "text-gray-700"
-                }`}>
+                <label
+                  className={`block text-sm font-medium mb-2 ${
+                    isDarkMode ? "text-gray-300" : "text-gray-700"
+                  }`}
+                >
                   Committee
                 </label>
                 <select
@@ -246,7 +256,10 @@ const MeetingManagement = () => {
                 >
                   <option value="">Select Committee</option>
                   {committees.map((committee) => (
-                    <option key={committee.committee_id} value={committee.committee_id}>
+                    <option
+                      key={committee.committee_id}
+                      value={committee.committee_id}
+                    >
                       {committee.committee_name}
                     </option>
                   ))}
@@ -254,9 +267,11 @@ const MeetingManagement = () => {
               </div>
 
               <div>
-                <label className={`block text-sm font-medium mb-2 ${
-                  isDarkMode ? "text-gray-300" : "text-gray-700"
-                }`}>
+                <label
+                  className={`block text-sm font-medium mb-2 ${
+                    isDarkMode ? "text-gray-300" : "text-gray-700"
+                  }`}
+                >
                   Meeting Date & Time
                 </label>
                 <input
@@ -279,9 +294,11 @@ const MeetingManagement = () => {
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                isDarkMode ? "text-gray-300" : "text-gray-700"
-              }`}>
+              <label
+                className={`block text-sm font-medium mb-2 ${
+                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
                 Agenda
               </label>
               <textarea
@@ -303,9 +320,11 @@ const MeetingManagement = () => {
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                isDarkMode ? "text-gray-300" : "text-gray-700"
-              }`}>
+              <label
+                className={`block text-sm font-medium mb-2 ${
+                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
                 Applications to Review (Optional)
               </label>
               <select
@@ -335,9 +354,11 @@ const MeetingManagement = () => {
                     </option>
                   ))}
               </select>
-              <p className={`text-xs mt-1 ${
-                isDarkMode ? "text-gray-400" : "text-gray-500"
-              }`}>
+              <p
+                className={`text-xs mt-1 ${
+                  isDarkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
                 Hold Ctrl (or Cmd on Mac) to select multiple applications
               </p>
             </div>
@@ -372,11 +393,13 @@ const MeetingManagement = () => {
 
       {/* Error Display */}
       {error && (
-        <div className={`p-3 rounded-lg backdrop-blur-xl border ${
-          isDarkMode
-            ? "bg-red-900/20 border-red-700/30 text-red-200"
-            : "bg-red-50/80 border-red-200/50 text-red-700"
-        } shadow-lg`}>
+        <div
+          className={`p-3 rounded-lg backdrop-blur-xl border ${
+            isDarkMode
+              ? "bg-red-900/20 border-red-700/30 text-red-200"
+              : "bg-red-50/80 border-red-200/50 text-red-700"
+          } shadow-lg`}
+        >
           <div className="flex items-center space-x-2">
             <AlertTriangle size={16} />
             <p className="text-sm">{error}</p>
@@ -386,36 +409,38 @@ const MeetingManagement = () => {
 
       {/* Meetings List */}
       {loading && !showCreateForm ? (
-        <div className={`flex justify-center items-center h-32 rounded-lg backdrop-blur-xl border ${
-          isDarkMode 
-            ? "bg-gray-800/50 border-gray-700/50" 
-            : "bg-white/70 border-gray-200/50"
-        } shadow-lg`}>
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500 mx-auto mb-2"></div>
-            <p className={`text-sm ${
-              isDarkMode ? "text-gray-300" : "text-gray-600"
-            }`}>
-              Loading...
-            </p>
-          </div>
+        <div
+          className={`flex justify-center items-center h-32 rounded-lg backdrop-blur-xl border ${
+            isDarkMode
+              ? "bg-gray-800/50 border-gray-700/50"
+              : "bg-white/70 border-gray-200/50"
+          } shadow-lg`}
+        >
+          <BeatLoader />
         </div>
       ) : (
-        <div className={`p-4 rounded-lg backdrop-blur-xl border ${
-          isDarkMode 
-            ? "bg-gray-800/50 border-gray-700/50 text-white" 
-            : "bg-white/70 border-gray-200/50 text-gray-900"
-        } shadow-lg`}>
+        <div
+          className={`p-4 rounded-lg backdrop-blur-xl border ${
+            isDarkMode
+              ? "bg-gray-800/50 border-gray-700/50 text-white"
+              : "bg-white/70 border-gray-200/50 text-gray-900"
+          } shadow-lg`}
+        >
           <h2 className="text-lg font-semibold mb-4">Recent Meetings</h2>
-          
+
           {meetings.length === 0 ? (
             <div className="text-center py-8">
-              <Calendar size={32} className={`mx-auto mb-3 ${
-                isDarkMode ? "text-gray-600" : "text-gray-400"
-              }`} />
-              <p className={`text-sm ${
-                isDarkMode ? "text-gray-400" : "text-gray-500"
-              }`}>
+              <Calendar
+                size={32}
+                className={`mx-auto mb-3 ${
+                  isDarkMode ? "text-gray-600" : "text-gray-400"
+                }`}
+              />
+              <p
+                className={`text-sm ${
+                  isDarkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
                 No meetings scheduled yet
               </p>
             </div>
@@ -432,36 +457,43 @@ const MeetingManagement = () => {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-lg ${
-                        isDarkMode ? "bg-gray-600/50" : "bg-gray-100/50"
-                      }`}>
+                      <div
+                        className={`p-2 rounded-lg ${
+                          isDarkMode ? "bg-gray-600/50" : "bg-gray-100/50"
+                        }`}
+                      >
                         <Calendar size={16} />
                       </div>
                       <div>
                         <h3 className="font-medium">
-                          {meeting.committee?.committee_name || "Unknown Committee"}
+                          {meeting.committee?.committee_name ||
+                            "Unknown Committee"}
                         </h3>
-                        <p className={`text-sm ${
-                          isDarkMode ? "text-gray-400" : "text-gray-600"
-                        }`}>
+                        <p
+                          className={`text-sm ${
+                            isDarkMode ? "text-gray-400" : "text-gray-600"
+                          }`}
+                        >
                           {new Date(meeting.meeting_date).toLocaleString()}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        meeting.status === 'SCHEDULED' 
-                          ? isDarkMode 
-                            ? "bg-yellow-900/30 text-yellow-200" 
-                            : "bg-yellow-100 text-yellow-800"
-                          : meeting.status === 'COMPLETED'
-                          ? isDarkMode
-                            ? "bg-green-900/30 text-green-200"
-                            : "bg-green-100 text-green-800"
-                          : isDarkMode
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          meeting.status === "SCHEDULED"
+                            ? isDarkMode
+                              ? "bg-yellow-900/30 text-yellow-200"
+                              : "bg-yellow-100 text-yellow-800"
+                            : meeting.status === "COMPLETED"
+                            ? isDarkMode
+                              ? "bg-green-900/30 text-green-200"
+                              : "bg-green-100 text-green-800"
+                            : isDarkMode
                             ? "bg-gray-700/50 text-gray-300"
                             : "bg-gray-100 text-gray-800"
-                      }`}>
+                        }`}
+                      >
                         {meeting.status}
                       </span>
                       <button

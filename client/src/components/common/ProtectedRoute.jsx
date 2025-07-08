@@ -1,6 +1,8 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../../context/auth/AuthContext";
+import BeatLoader from "../../components/common/BeatLoader";
+
 
 const ProtectedRoute = ({ children, requiredRole = null }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -10,7 +12,7 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-900"></div>
+        <BeatLoader />
       </div>
     );
   }

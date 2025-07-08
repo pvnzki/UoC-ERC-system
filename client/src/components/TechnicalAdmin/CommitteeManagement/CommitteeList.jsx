@@ -18,6 +18,7 @@ import { adminServices } from "../../../../services/admin-services";
 import { toast } from "react-toastify";
 import CommitteeDetailsModal from "./CommitteeDetailsModal";
 import AddMembersModal from "./AddMembersModal";
+import BeatLoader from "../../common/BeatLoader";
 
 const CommitteeList = ({ committees, onCommitteeUpdated }) => {
   const { isDarkMode } = useTheme();
@@ -430,11 +431,7 @@ const CommitteeList = ({ committees, onCommitteeUpdated }) => {
         <div className="p-4">
           {loading ? (
             <div className="flex justify-center items-center h-32">
-              <div
-                className={`animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 ${
-                  isDarkMode ? "border-blue-400" : "border-blue-500"
-                }`}
-              ></div>
+              <BeatLoader />
             </div>
           ) : filteredCommittees.length === 0 ? (
             <div className="text-center py-12">
