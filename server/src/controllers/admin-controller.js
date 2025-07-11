@@ -940,31 +940,6 @@ const adminController = {
     }
   },
 
-  // Simple dashboard test
-  async testDashboard(req, res) {
-    try {
-      // Test basic query
-      const testResult = await db.sequelize.query(
-        'SELECT COUNT(*) as count FROM "Applications"',
-        {
-          type: db.sequelize.QueryTypes.SELECT,
-        }
-      );
-
-      return res.status(200).json({
-        message: "Dashboard test successful",
-        applicationCount: testResult[0].count,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("Dashboard test failed:", error);
-      return res.status(500).json({
-        error: "Dashboard test failed",
-        details: error.message,
-      });
-    }
-  },
-
   // Debug committees endpoint
   async debugCommittees(req, res) {
     try {

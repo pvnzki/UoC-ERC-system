@@ -382,13 +382,6 @@ export const adminServices = {
     return response.data;
   },
 
-  // Test dashboard API
-  testDashboard: async () => {
-    const instance = createAuthInstance();
-    const response = await instance.get("/admin/dashboard/test");
-    return response.data;
-  },
-
   // 2FA: Request code (no auth required)
   request2FA: async ({ email }) => {
     return axios.post(`${API_URL}/admin/security/2fa/request`, { email });
